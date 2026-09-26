@@ -42,7 +42,7 @@ export function ApprovalList() {
         </div>
         {pending.length === 0 ? (
           <EmptyState
-            icon={Icons.shield}
+            icon={Icons.protocol}
             title="Không có phác đồ chờ duyệt"
             hint="Yêu cầu mới sẽ xuất hiện trong Thông báo."
           />

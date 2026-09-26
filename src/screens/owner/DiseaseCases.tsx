@@ -81,7 +81,7 @@ export function OwnerCaseList() {
             <div className="px-4 space-y-3">
                 {operationalCases.length === 0 ? (
                     <EmptyState
-                        icon={Icons.heart}
+                        icon={Icons.diseaseCase}
                         title="Không có ca bệnh"
                         hint="Không có ca bệnh nào đang theo dõi."
                     />
@@ -100,7 +100,7 @@ export function OwnerCaseList() {
                         />
                         {visible.length === 0 ? (
                             <EmptyState
-                                icon={Icons.heart}
+                                icon={Icons.diseaseCase}
                                 title={
                                     tab === 'open'
                                         ? 'Không có ca đang xử lý'
@@ -176,7 +176,7 @@ export function OwnerCaseDetail({ caseId }: { caseId: string }) {
                 <ScreenHeader title="Chi tiết ca bệnh" />
                 <div className="px-4">
                     <EmptyState
-                        icon={Icons.heart}
+                        icon={Icons.diseaseCase}
                         title="Không tìm thấy ca bệnh"
                         hint="Ao hoặc trang trại liên quan không còn trong danh sách quản lý."
                     />

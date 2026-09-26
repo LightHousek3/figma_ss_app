@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { NoticeTone, ToastNotice } from "./ui";
+import { applyCurrentUserRole, currentUser, type AppAccountRole } from "./data";
 
 export type TabKey = "home" | "seasons" | "tasks" | "notifications" | "account"
   | "farm" | "owner-tasks" | "owner-protocols" | "inventory";
@@ -18,8 +19,10 @@ interface NavState {
   toast: (msg: string, tone?: NoticeTone, title?: string) => void;
   toastNotice: ToastNotice | null;
   loggedIn: boolean;
-  login: () => void;
+  accountRole: AppAccountRole;
+  login: (role?: AppAccountRole) => void;
   logout: () => void;
+  switchAccount: (role: AppAccountRole) => void;
 }
 
 const NavCtx = createContext<NavState | null>(null);
@@ -35,6 +38,7 @@ export function NavProvider({ children }: { children: React.ReactNode }) {
   const [toastNotice, setToastNotice] = useState<ToastNotice | null>(null);
   const toastTimerRef = useRef<number | undefined>(undefined);
   const [loggedIn, setLoggedIn] = useState(false);
+  const [accountRole, setAccountRole] = useState<AppAccountRole>(currentUser.roleKey);
 
   useEffect(() => () => {
     if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
@@ -64,6 +68,25 @@ export function NavProvider({ children }: { children: React.ReactNode }) {
     toastTimerRef.current = window.setTimeout(() => setToastNotice(null), 3200);
   }, []);
 
+  const activateAccount = useCallback((role: AppAccountRole) => {
+    applyCurrentUserRole(role);
+    setAccountRole(role);
+    setTabState("home");
+    setStack([]);
+  }, []);
+
+  const switchAccount = useCallback((role: AppAccountRole) => {
+    if (role === accountRole) return;
+    activateAccount(role);
+    toast(
+      role === "farm_owner"
+        ? "Đã chuyển sang tài khoản Chủ trang trại."
+        : "Đã chuyển sang tài khoản Kỹ thuật viên.",
+      "success",
+      "Chuyển tài khoản thành công",
+    );
+  }, [accountRole, activateAccount, toast]);
+
   const value = useMemo<NavState>(
     () => ({
       tab,
@@ -74,14 +97,31 @@ export function NavProvider({ children }: { children: React.ReactNode }) {
       toast,
       toastNotice,
       loggedIn,
-      login: () => setLoggedIn(true),
+      accountRole,
+      login: (role = accountRole) => {
+        activateAccount(role);
+        setLoggedIn(true);
+      },
       logout: () => {
         setLoggedIn(false);
         setTabState("home");
         setStack([]);
       },
+      switchAccount,
     }),
-    [tab, stack, setTab, go, back, toast, toastNotice, loggedIn],
+    [
+      tab,
+      stack,
+      setTab,
+      go,
+      back,
+      toast,
+      toastNotice,
+      loggedIn,
+      accountRole,
+      activateAccount,
+      switchAccount,
+    ],
   );
 
   return <NavCtx.Provider value={value}>{children}</NavCtx.Provider>;

@@ -313,10 +313,11 @@ export function FarmDetail({ farmId }: { farmId: string }) {
                             Danh sách ao
                         </span>
                         <button
+                            type="button"
                             onClick={() => nav.go('owner-pond-edit', { farmId })}
-                            className="flex items-center gap-1 text-[12px] font-semibold text-ocean-600"
+                            className="inline-flex min-h-9 items-center gap-1 rounded-xl bg-ocean-50 px-3 text-[11px] font-bold text-ocean-700"
                         >
-                            <Icons.plus size={14} /> Thêm ao
+                            <Icons.plus size={13} /> Thêm ao
                         </button>
                     </div>
                     {ponds.length > 0 && (
@@ -464,7 +465,7 @@ export function FarmEdit({ farmId }: { farmId?: string }) {
     if (existing?.isDeleted) {
         return (
             <div className="pb-8">
-                <ScreenHeader title="Chỉnh sửa trang trại" />
+                <ScreenHeader title="Chỉnh sửa trang trại" subtitle={existing?.name} />
                 <div className="px-4">
                     <EmptyState
                         icon={Icons.building}
@@ -617,7 +618,10 @@ export function FarmEdit({ farmId }: { farmId?: string }) {
 
     return (
         <div className="flex flex-col">
-            <ScreenHeader title={isCreate ? 'Tạo trang trại' : 'Chỉnh sửa trang trại'} />
+            <ScreenHeader
+                title={isCreate ? 'Tạo trang trại' : 'Chỉnh sửa trang trại'}
+                subtitle={existing?.name}
+            />
 
             <div className="space-y-4 px-4 pt-4 pb-10">
                 {/* Name — required, unique */}

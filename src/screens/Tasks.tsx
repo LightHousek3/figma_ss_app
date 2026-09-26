@@ -3,13 +3,14 @@ import { useNav } from "../app/store";
 import { contextLabel, tasks } from "../app/data";
 import {
   Badge,
-  ContextBar,
   fmtDateTime,
   GhostButton,
   Icons,
+  EmptyState,
   PrimaryButton,
   priorityMeta,
   taskStatusMeta,
+  Segmented,
 } from "../app/ui";
 import { ScreenHeader, TopBar } from "./common";
 
@@ -25,18 +26,20 @@ export function TasksList() {
   return (
     <div className="pb-6">
       <TopBar title="Nhiệm vụ" subtitle="Công việc chủ trại giao" />
-      <div className="flex gap-2 px-4 pb-3">
-        {(["open", "done"] as const).map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition ${filter === f ? "bg-ocean-500 text-white shadow-sm" : "bg-white/70 text-ink-soft"}`}
-          >
-            {f === "open" ? "Cần làm" : "Đã xong"}
-          </button>
-        ))}
+      <div className="px-4 pb-3">
+        <Segmented
+          value={filter}
+          onChange={setFilter}
+          options={[
+            { value: "open", label: `Cần làm (${tasks.filter((t) => t.status === "pending" || t.status === "in_progress").length})` },
+            { value: "done", label: `Đã kết thúc (${tasks.filter((t) => t.status === "completed" || t.status === "cancelled").length})` },
+          ]}
+        />
       </div>
       <div className="space-y-2.5 px-4">
+        {list.length === 0 && (
+          <EmptyState icon={Icons.checkList} title="Không có nhiệm vụ ở trạng thái này" />
+        )}
         {list.map((t) => {
           const sm = taskStatusMeta[t.status];
           const pm = priorityMeta[t.priority];
@@ -69,12 +72,16 @@ export function TaskDetail({ id }: { id: string }) {
   const sm = taskStatusMeta[t.status];
   const pm = priorityMeta[t.priority];
   const terminal = t.status === "completed" || t.status === "cancelled";
+  const taskContext = t.seasonId ? contextLabel(t.seasonId) : null;
 
   return (
     <div className="pb-6">
-      <ScreenHeader title="Chi tiết nhiệm vụ" subtitle={t.id} right={<Badge tone={sm.tone} dot>{sm.label}</Badge>} />
+      <ScreenHeader
+        title="Chi tiết nhiệm vụ"
+        subtitle={taskContext ? `${taskContext.pond} · ${taskContext.season}` : t.id}
+        right={<Badge tone={sm.tone} dot>{sm.label}</Badge>}
+      />
       <div className="space-y-4 px-4 pt-4">
-        {t.seasonId && <ContextBar {...contextLabel(t.seasonId)} />}
         <div className="card p-4">
           <div className="flex items-center gap-2">
             <Badge tone={pm.tone} dot>Ưu tiên: {pm.label}</Badge>
@@ -91,6 +98,17 @@ export function TaskDetail({ id }: { id: string }) {
               <div className="mt-0.5 font-semibold text-ink">{t.assignedBy}</div>
             </div>
           </div>
+          {(t.startedAt || t.completedAt || t.cancellationReason) && (
+            <div className="mt-3 space-y-1.5 border-t border-line-soft pt-3 text-[11px] text-ink-soft">
+              {t.startedAt && <div>Bắt đầu: {fmtDateTime(t.startedAt)}</div>}
+              {t.completedAt && <div>Hoàn thành: {fmtDateTime(t.completedAt)}</div>}
+              {t.cancellationReason && (
+                <div className="rounded-lg bg-rose-50 p-2 text-rose-600">
+                  Lý do hủy: {t.cancellationReason}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {terminal ? (
@@ -101,12 +119,12 @@ export function TaskDetail({ id }: { id: string }) {
           <div className="space-y-2">
             <div className="px-1 text-[13px] font-bold text-ink">Cập nhật trạng thái</div>
             {t.status === "pending" && (
-              <PrimaryButton full icon={Icons.ops} onClick={() => { nav.back(); nav.toast("Đã bắt đầu nhiệm vụ."); }}>
+              <PrimaryButton full icon={Icons.ops} onClick={() => { t.status = "in_progress"; nav.back(); nav.toast("Đã bắt đầu nhiệm vụ."); }}>
                 Bắt đầu làm
               </PrimaryButton>
             )}
             {t.status === "in_progress" && (
-              <PrimaryButton full tone="teal" icon={Icons.check} onClick={() => { nav.back(); nav.toast("Đã hoàn thành nhiệm vụ."); }}>
+              <PrimaryButton full tone="teal" icon={Icons.check} onClick={() => { t.status = "completed"; nav.back(); nav.toast("Đã hoàn thành nhiệm vụ."); }}>
                 Đánh dấu hoàn thành
               </PrimaryButton>
             )}

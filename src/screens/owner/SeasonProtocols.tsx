@@ -142,7 +142,7 @@ export function SeasonProtocolList({ seasonId }: { seasonId: string }) {
                 <ScreenHeader title="Phác đồ vụ nuôi" />
                 <div className="px-4">
                     <EmptyState
-                        icon={Icons.shield}
+                        icon={Icons.protocol}
                         title="Không tìm thấy vụ nuôi"
                         hint="Vụ nuôi không còn trong danh sách quản lý."
                     />
@@ -174,7 +174,7 @@ export function SeasonProtocolList({ seasonId }: { seasonId: string }) {
                 />
                 {visible.length === 0 ? (
                     <EmptyState
-                        icon={Icons.shield}
+                        icon={Icons.protocol}
                         title="Chưa có phác đồ"
                         hint="Chuyên gia sẽ soạn và gửi phác đồ để Chủ trại xem."
                     />
@@ -265,7 +265,7 @@ export function SeasonProtocolDetail({ protocolId }: { protocolId: string }) {
                 <ScreenHeader title="Chi tiết phác đồ" />
                 <div className="px-4">
                     <EmptyState
-                        icon={Icons.shield}
+                        icon={Icons.protocol}
                         title="Không tìm thấy phác đồ"
                         hint="Vụ nuôi liên quan không còn trong danh sách quản lý."
                     />
@@ -326,7 +326,7 @@ export function SeasonProtocolDetail({ protocolId }: { protocolId: string }) {
                                 }
                                 className="flex w-full items-center gap-2 rounded-xl border border-rose-100 bg-rose-50 px-3 py-2 text-left"
                             >
-                                <Icons.heart size={14} className="shrink-0 text-rose-500" />
+                                <Icons.diseaseCase size={14} className="shrink-0 text-rose-500" />
                                 <div className="min-w-0 flex-1">
                                     <div className="text-[9px] font-bold uppercase tracking-wide text-rose-500">
                                         Ca bệnh liên quan
@@ -1106,7 +1106,7 @@ function TechnicalScopeAudit() {
     return (
         <div className="rounded-2xl border border-violet-200 bg-violet-50 p-4">
             <div className="flex items-start gap-2.5">
-                <Icons.shield size={18} className="mt-0.5 shrink-0 text-violet-600" />
+                <Icons.protocol size={18} className="mt-0.5 shrink-0 text-violet-600" />
                 <div>
                     <div className="text-[13px] font-bold text-violet-800">
                         Đối chiếu mô hình kỹ thuật Việt Nam
@@ -2080,7 +2080,7 @@ export function SeasonCaseList({ seasonId }: { seasonId: string }) {
                 <ScreenHeader title="Ca bệnh" />
                 <div className="px-4">
                     <EmptyState
-                        icon={Icons.heart}
+                        icon={Icons.diseaseCase}
                         title="Không tìm thấy vụ nuôi"
                         hint="Vụ nuôi này không còn nằm trong danh sách quản lý."
                     />
@@ -2098,7 +2098,7 @@ export function SeasonCaseList({ seasonId }: { seasonId: string }) {
             <div className="space-y-3 px-4">
                 {cases.length === 0 ? (
                     <EmptyState
-                        icon={Icons.heart}
+                        icon={Icons.diseaseCase}
                         title="Không có ca bệnh"
                         hint="Vụ nuôi này chưa ghi nhận ca bệnh nào."
                     />
@@ -2114,7 +2114,7 @@ export function SeasonCaseList({ seasonId }: { seasonId: string }) {
                         />
                         {visible.length === 0 ? (
                             <EmptyState
-                                icon={Icons.heart}
+                                icon={Icons.diseaseCase}
                                 title={
                                     tab === 'open'
                                         ? 'Không có ca đang xử lý'

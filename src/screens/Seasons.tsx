@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNav } from "../app/store";
 import { farmForSeason, pondForSeason, seasons } from "../app/data";
-import { Badge, healthMeta, num, seasonMeta, toneText } from "../app/ui";
+import { Badge, EmptyState, healthMeta, Icons, num, seasonMeta, Segmented, toneText } from "../app/ui";
 import { TopBar } from "./common";
 
 export function SeasonsList() {
@@ -12,21 +12,21 @@ export function SeasonsList() {
   return (
     <div className="pb-6">
       <TopBar title="Vụ nuôi" subtitle="Các vụ nuôi bạn được phân công" />
-      <div className="flex gap-2 px-4 pb-3">
-        {(["active", "all"] as const).map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition ${
-              filter === f ? "bg-ocean-500 text-white shadow-sm" : "bg-white/70 text-ink-soft"
-            }`}
-          >
-            {f === "active" ? "Đang nuôi" : "Tất cả"}
-          </button>
-        ))}
+      <div className="px-4 pb-3">
+        <Segmented
+          value={filter}
+          onChange={setFilter}
+          options={[
+            { value: "active", label: `Đang nuôi (${seasons.filter((s) => s.status === "active").length})` },
+            { value: "all", label: `Tất cả (${seasons.length})` },
+          ]}
+        />
       </div>
 
       <div className="space-y-3 px-4">
+        {list.length === 0 && (
+          <EmptyState icon={Icons.layers} title="Không có vụ nuôi phù hợp" />
+        )}
         {list.map((s) => {
           const pond = pondForSeason(s.id);
           const farm = farmForSeason(s.id);
@@ -49,14 +49,20 @@ export function SeasonsList() {
                   {sm.label}
                 </Badge>
               </div>
-              <div className="mt-3 grid grid-cols-3 gap-2">
-                <MiniStat label="DOC" value={s.status === "planning" ? "—" : String(s.dayOfCulture)} />
-                <MiniStat label="Sinh khối" value={s.latestBiomassKg ? `${num(s.latestBiomassKg)}kg` : "—"} />
-                <MiniStat
-                  label="Sức khỏe"
-                  value={<span className={toneText[hm.tone]}>{hm.label}</span>}
-                />
-              </div>
+              {s.status === "planning" ? (
+                <div className="mt-3 rounded-xl bg-violet-50 px-3 py-2.5 text-[11px] leading-relaxed text-violet-700">
+                  Chờ Chủ trại kích hoạt vụ. Chức năng ghi nhận vận hành chỉ mở khi vụ bắt đầu nuôi.
+                </div>
+              ) : (
+                <div className="mt-3 grid grid-cols-3 gap-2">
+                  <MiniStat label="DOC" value={String(s.dayOfCulture)} />
+                  <MiniStat label="Sinh khối" value={s.latestBiomassKg ? `${num(s.latestBiomassKg)}kg` : "—"} />
+                  <MiniStat
+                    label="Sức khỏe"
+                    value={<span className={toneText[hm.tone]}>{hm.label}</span>}
+                  />
+                </div>
+              )}
             </button>
           );
         })}

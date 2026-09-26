@@ -3,12 +3,10 @@ import { useNav } from "../app/store";
 import { contextLabel, operations } from "../app/data";
 import {
   Badge,
-  ContextBar,
   doseBasisLabel,
   Field,
   fmtDateTime,
   fmtTime,
-  GhostButton,
   Icons,
   inputClass,
   opMeta,
@@ -31,6 +29,7 @@ export default function OperationDetail({ id }: { id: string }) {
   const [exec, setExec] = useState(false);
   const [qty, setQty] = useState(String(op.plannedQuantity));
   const [reason, setReason] = useState("");
+  const [note, setNote] = useState("");
 
   const actual = parseFloat(qty) || 0;
   const variancePct = op.plannedQuantity ? Math.abs((actual - op.plannedQuantity) / op.plannedQuantity) * 100 : 0;
@@ -38,10 +37,12 @@ export default function OperationDetail({ id }: { id: string }) {
 
   return (
     <div className="pb-6">
-      <ScreenHeader title="Chi tiết vận hành" subtitle={op.id} right={<Badge tone={om.tone} dot>{om.label}</Badge>} />
+      <ScreenHeader
+        title="Chi tiết vận hành"
+        subtitle={`${ctx.pond} · ${ctx.season}`}
+        right={<Badge tone={om.tone} dot>{om.label}</Badge>}
+      />
       <div className="space-y-4 px-4 pt-4">
-        <ContextBar {...ctx} />
-
         <div className="card p-4">
           <div className="flex items-center gap-3">
             <span className={`grid size-12 place-items-center rounded-2xl ${meta.tone === "teal" ? "bg-teal-50 text-teal-500" : meta.tone === "rose" ? "bg-rose-50 text-rose-500" : meta.tone === "violet" ? "bg-violet-50 text-violet-500" : "bg-ocean-50 text-ocean-600"}`}>
@@ -61,6 +62,14 @@ export default function OperationDetail({ id }: { id: string }) {
             <KV k="Cách tính liều" v={doseBasisLabel[op.doseBasis]} />
             <KV k="Liều kế hoạch" v={`${op.plannedQuantity} ${op.unit}`} mono />
             {op.execution && <KV k="Thực tế" v={`${op.execution.actualQuantity} ${op.unit}`} mono />}
+            {op.basisQuantity != null && (
+              <KV
+                k="Dữ liệu tính liều"
+                v={`${op.basisQuantity.toLocaleString("vi-VN")} ${op.basisUnit === "kg_biomass" ? "kg sinh khối" : "m³ nước"}`}
+                mono
+              />
+            )}
+            {op.calculationVersion && <KV k="Phiên bản tính" v={op.calculationVersion} mono />}
           </div>
 
           {op.instructions && (
@@ -131,7 +140,15 @@ export default function OperationDetail({ id }: { id: string }) {
             full
             icon={Icons.check}
             onClick={() => {
+              if (actual <= 0) return nav.toast("Số lượng thực tế phải lớn hơn 0.");
               if (needsReason && !reason.trim()) return nav.toast("Chênh lệch vượt 10% — cần nhập lý do.");
+              op.execution = {
+                actualQuantity: actual,
+                executedAt: new Date().toISOString(),
+                note: note.trim() || undefined,
+                varianceReason: needsReason ? reason.trim() : undefined,
+              };
+              op.status = "completed";
               setExec(false);
               nav.back();
               nav.toast("Đã ghi nhận thực hiện & trừ kho (JIT).");
@@ -146,7 +163,7 @@ export default function OperationDetail({ id }: { id: string }) {
           thực hiện không thể chỉnh sửa và hoàn tất lịch.
         </div>
         <Field label="Sản phẩm sử dụng">
-          <input className={`${inputClass} font-sans`} defaultValue={op.productName} />
+          <input className={`${inputClass} bg-slate-50 font-sans`} value={op.productName} readOnly />
         </Field>
         <div className="mt-3">
           <Field label="Số lượng thực tế" unit={op.unit} hint={`Kế hoạch: ${op.plannedQuantity} ${op.unit}`}>
@@ -168,7 +185,13 @@ export default function OperationDetail({ id }: { id: string }) {
         )}
         <div className="mt-3">
           <Field label="Ghi chú">
-            <textarea className={`${inputClass} font-sans`} rows={2} placeholder="Tình trạng bắt mồi, thời tiết…" />
+            <textarea
+              className={`${inputClass} font-sans`}
+              rows={2}
+              placeholder="Tình trạng bắt mồi, thời tiết…"
+              value={note}
+              onChange={(event) => setNote(event.target.value)}
+            />
           </Field>
         </div>
       </Sheet>

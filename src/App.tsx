@@ -1,7 +1,6 @@
 import { NavProvider, useNav, type TabKey } from "./app/store"
 import { AppToast, Icons } from "./app/ui"
 import { notifications } from "./app/data"
-import { currentUser } from "./app/data"
 import { isOwnerNotificationVisible, ownerNotifications } from "./app/ownerData"
 import Auth from "./screens/Auth"
 import Home from "./screens/Home"
@@ -14,7 +13,7 @@ import PondHub, {
 } from "./screens/Pond"
 import OperationDetail from "./screens/Operation"
 import { CaseDetail, CaseNew } from "./screens/Cases"
-import { AIDiagnosis, Chat } from "./screens/AI"
+import { AIDiagnosis, AIDiagnosisDetail, Chat } from "./screens/AI"
 import { TasksList, TaskDetail } from "./screens/Tasks"
 import { NotificationsList } from "./screens/Notifications"
 import { Account } from "./screens/Account"
@@ -66,8 +65,6 @@ import {
   FarmStockHistory,
 } from "./screens/owner/Inventory"
 
-const isOwner = currentUser.roleKey === "farm_owner"
-
 // ── KTV Tabs ──────────────────────────────────────────────────────────────────
 const ktvTabs: { key: TabKey; label: string; icon: keyof typeof Icons }[] = [
   { key: "home", label: "Trang chủ", icon: "home" },
@@ -86,10 +83,8 @@ const ownerTabs: { key: TabKey; label: string; icon: keyof typeof Icons }[] = [
   { key: "account", label: "Tài khoản", icon: "user" },
 ]
 
-const activeTabs = isOwner ? ownerTabs : ktvTabs
-
 // ── Tab roots ─────────────────────────────────────────────────────────────────
-function TabRoot({ tab }: { tab: TabKey }) {
+function TabRoot({ tab, isOwner }: { tab: TabKey; isOwner: boolean }) {
   if (isOwner) {
     switch (tab) {
       case "home":
@@ -125,9 +120,11 @@ function TabRoot({ tab }: { tab: TabKey }) {
 function StackRoute({
   name,
   params,
+  isOwner,
 }: {
   name: string
   params?: Record<string, string>
+  isOwner: boolean
 }) {
   const p = params ?? {}
   // Shared routes
@@ -247,6 +244,8 @@ function StackRoute({
         return <CaseNew seasonId={p.seasonId} />
       case "ai":
         return <AIDiagnosis seasonId={p.seasonId} />
+      case "ai-detail":
+        return <AIDiagnosisDetail id={p.id} />
       case "chat":
         return <Chat seasonId={p.seasonId} />
       case "task":
@@ -259,6 +258,8 @@ function StackRoute({
 // ── Shell ─────────────────────────────────────────────────────────────────────
 function Shell() {
   const nav = useNav()
+  const isOwner = nav.accountRole === "farm_owner"
+  const activeTabs = isOwner ? ownerTabs : ktvTabs
   const top = nav.stack[nav.stack.length - 1]
   const fullHeightRoute = top && ["case", "chat"].includes(top.name)
 
@@ -279,9 +280,10 @@ function Shell() {
             key={nav.stack.length}
             name={top.name}
             params={top.params}
+            isOwner={isOwner}
           />
         ) : (
-          <TabRoot tab={nav.tab} />
+          <TabRoot tab={nav.tab} isOwner={isOwner} />
         )}
       </div>
 

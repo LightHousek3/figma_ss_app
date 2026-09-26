@@ -32,9 +32,9 @@ const catMeta: Record<NoticeCategory, {
 }> = {
   warning: { label: "Cảnh báo sớm", tone: "amber", icon: "warn" },
   operation: { label: "Vận hành", tone: "teal", icon: "ops" },
-  case: { label: "Ca bệnh", tone: "rose", icon: "heart" },
+  case: { label: "Ca bệnh", tone: "rose", icon: "diseaseCase" },
   task: { label: "Nhiệm vụ", tone: "ocean", icon: "checkList" },
-  protocol: { label: "Phác đồ", tone: "violet", icon: "shield" },
+  protocol: { label: "Phác đồ", tone: "violet", icon: "protocol" },
   season: { label: "Vụ nuôi", tone: "slate", icon: "layers" },
   inventory: { label: "Kho vật tư", tone: "slate", icon: "box" },
   personnel: { label: "Nhân sự", tone: "ocean", icon: "users" },
@@ -91,6 +91,10 @@ export function NotificationsList() {
 
     if (notice.action.nav.startsWith("pond:"))
       nav.go("pond", { seasonId: notice.action.nav.slice(5) })
+    else if (notice.action.nav.startsWith("health:"))
+      nav.go("health", { seasonId: notice.action.nav.slice(7) })
+    else if (notice.action.nav.startsWith("op:"))
+      nav.go("op", { id: notice.action.nav.slice(3) })
     else if (notice.action.nav.startsWith("case:"))
       nav.go("case", { id: notice.action.nav.slice(5) })
     else if (notice.action.nav === "tasks") nav.setTab("tasks")

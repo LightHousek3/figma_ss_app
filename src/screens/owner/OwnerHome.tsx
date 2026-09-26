@@ -150,7 +150,7 @@ export default function OwnerHome() {
                         className="flex w-full items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-left"
                     >
                         <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-amber-100 text-amber-600">
-                            <Icons.shield size={18} />
+                            <Icons.protocol size={18} />
                         </span>
                         <div className="flex-1">
                             <div className="text-[13px] font-bold text-amber-700">
@@ -192,7 +192,7 @@ export default function OwnerHome() {
                         className="flex w-full items-center gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-left"
                     >
                         <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-rose-100 text-rose-500">
-                            <Icons.heart size={18} />
+                            <Icons.diseaseCase size={18} />
                         </span>
                         <div className="min-w-0 flex-1">
                             <div className="text-[13px] font-bold text-rose-700">

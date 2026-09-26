@@ -337,26 +337,28 @@ export function SeasonDetail({ seasonId }: { seasonId: string }) {
                     )}
                 </div>
 
-                <div className="grid grid-cols-3 gap-2">
-                    <SeasonHistoryShortcut
-                        label="Đo nước"
-                        icon={Icons.drop}
-                        tone="ocean"
-                        onClick={() => nav.go('owner-water-logs', { seasonId })}
-                    />
-                    <SeasonHistoryShortcut
-                        label="Sức khỏe"
-                        icon={Icons.heart}
-                        tone="rose"
-                        onClick={() => nav.go('owner-health-logs', { seasonId })}
-                    />
-                    <SeasonHistoryShortcut
-                        label="Thu hoạch"
-                        icon={Icons.harvest}
-                        tone="teal"
-                        onClick={() => nav.go('owner-harvest-list', { seasonId })}
-                    />
-                </div>
+                {s.status !== 'planning' && (
+                    <div className="grid grid-cols-3 gap-2">
+                        <SeasonHistoryShortcut
+                            label="Đo nước"
+                            icon={Icons.drop}
+                            tone="ocean"
+                            onClick={() => nav.go('owner-water-logs', { seasonId })}
+                        />
+                        <SeasonHistoryShortcut
+                            label="Sức khỏe"
+                            icon={Icons.heart}
+                            tone="rose"
+                            onClick={() => nav.go('owner-health-logs', { seasonId })}
+                        />
+                        <SeasonHistoryShortcut
+                            label="Thu hoạch"
+                            icon={Icons.harvest}
+                            tone="teal"
+                            onClick={() => nav.go('owner-harvest-list', { seasonId })}
+                        />
+                    </div>
+                )}
 
                 {(s.status === 'active' || s.status === 'completed') && (
                     <SeasonCostCard seasonId={seasonId} />
@@ -370,7 +372,7 @@ export function SeasonDetail({ seasonId }: { seasonId: string }) {
                         className="card flex w-full items-center gap-3 p-3.5 text-left transition active:scale-[0.99]"
                     >
                         <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-ocean-50 text-ocean-600">
-                            <Icons.shield size={18} />
+                            <Icons.protocol size={18} />
                         </span>
                         <div className="min-w-0 flex-1">
                             <div className="text-[14px] font-bold text-ink">Phác đồ</div>
@@ -413,7 +415,7 @@ export function SeasonDetail({ seasonId }: { seasonId: string }) {
                                         : 'bg-slate-50 text-slate-400'
                                 }`}
                             >
-                                <Icons.heart size={18} />
+                                <Icons.diseaseCase size={18} />
                             </span>
                             <div className="min-w-0 flex-1">
                                 <div className="text-[14px] font-bold text-ink">Ca bệnh</div>

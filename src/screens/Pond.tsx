@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNav } from '../app/store';
 import {
     contextLabel,
+    currentUser,
     diseaseCases,
     farmForSeason,
     healthLogs,
@@ -20,6 +21,7 @@ import {
     caseStatusMeta,
     chip,
     ContextBar,
+    CompactFilterTabs,
     EmptyState,
     Field,
     fmtDate,
@@ -36,6 +38,7 @@ import {
     MetricTileGrid,
     SectionTitle,
     seasonMeta,
+    Segmented,
     Sheet,
     Stat,
     toneText,
@@ -52,6 +55,7 @@ const waterBad = (l: WaterLog) => {
         { label: 'NH3', metric: 'nh3', value: l.nh3MgL },
         { label: 'NO2', metric: 'no2', value: l.no2MgL },
         { label: 'Kiềm', metric: 'alkalinity', value: l.alkalinity },
+        { label: 'H2S', metric: 'h2s', value: l.h2sMgL },
     ];
     return metrics
         .filter(({ metric, value }) => waterMetricIsOutside(metric, value))
@@ -91,14 +95,14 @@ export default function PondHub({ seasonId }: { seasonId: string }) {
         { label: 'Vận hành', icon: 'ops', tone: 'teal', route: 'ops' },
         { label: 'AI nhận diện', icon: 'camera', tone: 'violet', route: 'ai' },
         { label: 'Hỏi chuyên gia', icon: 'chat', tone: 'ocean', route: 'chat' },
-        { label: 'Ca bệnh', icon: 'warn', tone: 'amber', route: 'cases' },
+        { label: 'Ca bệnh', icon: 'diseaseCase', tone: 'rose', route: 'cases' },
     ];
 
     return (
         <div className="pb-6">
             <ScreenHeader
                 title={pond.name}
-                subtitle={`${s.name} · DOC ${s.dayOfCulture}`}
+                subtitle={`${s.name} · ${s.status === 'planning' ? sm.label : `DOC ${s.dayOfCulture}`}`}
                 right={
                     <Badge tone={sm.tone} dot>
                         {sm.label}
@@ -108,7 +112,7 @@ export default function PondHub({ seasonId }: { seasonId: string }) {
             <div className="space-y-4 px-4 pt-4">
                 <ContextBar {...ctx} />
 
-                {blocked.length > 0 && (
+                {s.status === 'active' && blocked.length > 0 && (
                     <div className="rounded-2xl border border-amber-500/30 bg-amber-50/70 p-3.5">
                         <div className="flex items-center gap-2 text-[13px] font-bold text-amber-500">
                             <Icons.warn size={16} /> Cảnh báo sớm
@@ -139,10 +143,19 @@ export default function PondHub({ seasonId }: { seasonId: string }) {
                             </div>
                         </div>
                     </div>
+                    {s.status === 'planning' ? (
+                        <div className="p-4">
+                            <div className="rounded-xl bg-violet-50 px-3.5 py-3 text-[12px] leading-relaxed text-violet-700">
+                                Vụ đang chuẩn bị và chưa phát sinh dữ liệu vận hành. KTV có thể xem
+                                phân công; các chức năng đo nước, sức khỏe, vận hành, AI và ca bệnh
+                                sẽ mở sau khi Chủ trại kích hoạt vụ.
+                            </div>
+                        </div>
+                    ) : (
                     <div className="grid grid-cols-2 gap-2.5 p-4">
                         <Stat
                             label="Ngày tuổi (DOC)"
-                            value={s.status === 'planning' ? 'Chưa thả' : s.dayOfCulture}
+                            value={s.dayOfCulture}
                             sub={`Thả ${fmtDate(s.stockingDate)}`}
                         />
                         <Stat
@@ -162,9 +175,11 @@ export default function PondHub({ seasonId }: { seasonId: string }) {
                             sub={s.latestAvgWeightG ? `${s.latestAvgWeightG} g/con` : 'chưa có mẫu'}
                         />
                     </div>
+                    )}
                 </div>
 
                 {/* Quick actions → dedicated sub-screens */}
+                {s.status === 'active' && (
                 <div className="grid grid-cols-3 gap-2">
                     {actions.map((a) => {
                         const Icon = Icons[a.icon];
@@ -191,8 +206,9 @@ export default function PondHub({ seasonId }: { seasonId: string }) {
                         );
                     })}
                 </div>
+                )}
 
-                {latestWater && (
+                {s.status === 'active' && latestWater && (
                     <button
                         onClick={() => nav.go('water', { seasonId })}
                         className="card w-full p-4 text-left transition active:scale-[0.99]"
@@ -209,6 +225,7 @@ export default function PondHub({ seasonId }: { seasonId: string }) {
                     </button>
                 )}
 
+                {s.status === 'active' && (
                 <div>
                     <div className="mb-2 flex items-center justify-between px-1">
                         <span className="font-display text-[14px] font-bold text-ink">
@@ -230,6 +247,7 @@ export default function PondHub({ seasonId }: { seasonId: string }) {
                         )}
                     </div>
                 </div>
+                )}
 
                 {/* Team */}
                 <SectionTitle>Nhân sự vụ nuôi</SectionTitle>
@@ -300,20 +318,17 @@ function PersonRow({ role, name }: { role: string; name: string }) {
 function SubScreen({
     seasonId,
     title,
-    subtitle,
     children,
 }: {
     seasonId: string;
     title: string;
-    subtitle: string;
     children: React.ReactNode;
 }) {
     const ctx = contextLabel(seasonId);
     return (
         <div className="pb-6">
-            <ScreenHeader title={title} subtitle={subtitle} />
+            <ScreenHeader title={title} subtitle={`${ctx.pond} · ${ctx.season}`} />
             <div className="space-y-4 px-4 pt-4">
-                <ContextBar {...ctx} />
                 {children}
             </div>
         </div>
@@ -321,33 +336,29 @@ function SubScreen({
 }
 
 export function WaterScreen({ seasonId }: { seasonId: string }) {
-    const pond = pondForSeason(seasonId);
     return (
-        <SubScreen seasonId={seasonId} title="Chất lượng nước" subtitle={pond.name}>
+        <SubScreen seasonId={seasonId} title="Chất lượng nước">
             <WaterTab seasonId={seasonId} />
         </SubScreen>
     );
 }
 export function HealthScreen({ seasonId }: { seasonId: string }) {
-    const pond = pondForSeason(seasonId);
     return (
-        <SubScreen seasonId={seasonId} title="Sức khỏe tôm" subtitle={pond.name}>
+        <SubScreen seasonId={seasonId} title="Sức khỏe tôm">
             <HealthTab seasonId={seasonId} />
         </SubScreen>
     );
 }
 export function OpsScreen({ seasonId }: { seasonId: string }) {
-    const pond = pondForSeason(seasonId);
     return (
-        <SubScreen seasonId={seasonId} title="Vận hành" subtitle={pond.name}>
+        <SubScreen seasonId={seasonId} title="Vận hành">
             <OpsTab seasonId={seasonId} />
         </SubScreen>
     );
 }
 export function CasesScreen({ seasonId }: { seasonId: string }) {
-    const pond = pondForSeason(seasonId);
     return (
-        <SubScreen seasonId={seasonId} title="Ca bệnh" subtitle={pond.name}>
+        <SubScreen seasonId={seasonId} title="Ca bệnh">
             <CasesTab seasonId={seasonId} />
         </SubScreen>
     );
@@ -362,6 +373,7 @@ function WaterGrid({ log }: { log: WaterLog }) {
         { label: 'NH3', value: log.nh3MgL, unit: 'mg/L', metric: 'nh3' },
         { label: 'NO2', value: log.no2MgL, unit: 'mg/L', metric: 'no2' },
         { label: 'Kiềm', value: log.alkalinity, unit: 'mg/L', metric: 'alkalinity' },
+        { label: 'H2S', value: log.h2sMgL, unit: 'mg/L', metric: 'h2s' },
     ];
     return (
         <MetricTileGrid
@@ -380,7 +392,18 @@ function WaterTab({ seasonId }: { seasonId: string }) {
     const nav = useNav();
     const [form, setForm] = useState(false);
     const [detail, setDetail] = useState<WaterLog | null>(null);
+    const [filter, setFilter] = useState<'all' | 'alert' | 'voided'>('all');
     const logs = waterLogs.filter((w) => w.seasonId === seasonId);
+    const latestValid = logs.find((log) => !log.voided);
+    const alertCount = logs.filter((log) => !log.voided && waterBad(log).length > 0).length;
+    const voidedCount = logs.filter((log) => !!log.voided).length;
+    const visible = logs.filter((log) =>
+        filter === 'alert'
+            ? !log.voided && waterBad(log).length > 0
+            : filter === 'voided'
+              ? !!log.voided
+              : true,
+    );
 
     return (
         <div className="space-y-3">
@@ -388,21 +411,43 @@ function WaterTab({ seasonId }: { seasonId: string }) {
                 Nhập nhật ký đo nước
             </PrimaryButton>
 
+            <div className="grid grid-cols-3 gap-2">
+                <Stat label="Bản ghi hợp lệ" value={logs.filter((log) => !log.voided).length} />
+                <Stat label="Có cảnh báo" value={alertCount} tone={alertCount > 0 ? 'rose' : 'teal'} />
+                <Stat
+                    label="DO mới nhất"
+                    value={latestValid?.doMgL != null ? latestValid.doMgL : '—'}
+                    sub={latestValid?.doMgL != null ? 'mg/L' : 'chưa đo'}
+                    tone="teal"
+                />
+            </div>
+
             <div className="rounded-xl bg-ocean-50/70 px-3 py-2 text-[11px] leading-snug text-ocean-700">
                 <Icons.info size={13} className="mr-1 inline align-[-2px]" />
                 Kết quả đo đã lưu không thể chỉnh sửa. Nếu ghi sai, KTV chỉ có thể hủy hiệu lực kèm
                 lý do để vẫn giữ được lịch sử đối chiếu.
             </div>
 
-            {logs.length === 0 && (
+            <Segmented
+                fill
+                value={filter}
+                onChange={setFilter}
+                options={[
+                    { value: 'all', label: `Tất cả (${logs.length})` },
+                    { value: 'alert', label: `Cảnh báo (${alertCount})` },
+                    { value: 'voided', label: `Vô hiệu (${voidedCount})` },
+                ]}
+            />
+
+            {visible.length === 0 && (
                 <EmptyState
                     icon={Icons.drop}
-                    title="Chưa có nhật ký đo nước"
-                    hint="Nhấn nút trên để ghi lần đo đầu tiên."
+                    title={logs.length === 0 ? 'Chưa có nhật ký đo nước' : 'Không có bản ghi phù hợp'}
+                    hint={logs.length === 0 ? 'Nhấn nút trên để ghi lần đo đầu tiên.' : undefined}
                 />
             )}
 
-            {logs.map((l) => {
+            {visible.map((l) => {
                 const flags = waterBad(l);
                 return (
                     <button
@@ -441,6 +486,11 @@ function WaterTab({ seasonId }: { seasonId: string }) {
                         <div className="mt-3">
                             <WaterGrid log={l} />
                         </div>
+                        {l.note && (
+                            <p className="mt-2 rounded-xl bg-slate-50 p-3 text-[10px] leading-relaxed text-ink-soft">
+                                {l.note}
+                            </p>
+                        )}
                     </button>
                 );
             })}
@@ -490,7 +540,9 @@ function WaterForm({
         >
             <div className="mb-3 rounded-xl bg-slate-50 px-3 py-2 text-[12px] text-ink-soft">
                 Thời điểm đo:{' '}
-                <span className="font-mono font-semibold text-ink">06:15 · 08/09</span>
+                <span className="font-mono font-semibold text-ink">
+                    {fmtDateTime(new Date().toISOString())}
+                </span>
             </div>
             <div className="grid grid-cols-2 gap-3">
                 {fields.map((f) => (
@@ -565,6 +617,11 @@ function WaterDetail({ log, onClose }: { log: WaterLog | null; onClose: () => vo
                             onClick={() => {
                                 if (!reason.trim())
                                     return nav.toast('Vui lòng nhập lý do hủy hiệu lực.');
+                                log.voided = {
+                                    at: new Date().toISOString(),
+                                    by: currentUser.name,
+                                    reason: reason.trim(),
+                                };
                                 onClose();
                                 nav.toast('Đã hủy hiệu lực bản ghi đo nước.');
                             }}
@@ -589,8 +646,20 @@ function HealthTab({ seasonId }: { seasonId: string }) {
     const nav = useNav();
     const [form, setForm] = useState(false);
     const [detail, setDetail] = useState<HealthLog | null>(null);
+    const [filter, setFilter] = useState<'all' | 'attention' | 'voided'>('all');
     const logs = healthLogs.filter((h) => h.seasonId === seasonId);
     const valid = logs.filter((l) => !l.voided);
+    const attentionCount = valid.filter(
+        (log) => log.healthStatus === 'warning' || log.healthStatus === 'critical',
+    ).length;
+    const voidedCount = logs.filter((log) => !!log.voided).length;
+    const visible = logs.filter((log) =>
+        filter === 'attention'
+            ? !log.voided && (log.healthStatus === 'warning' || log.healthStatus === 'critical')
+            : filter === 'voided'
+              ? !!log.voided
+              : true,
+    );
     const growth =
         valid.length >= 2 ? (valid[0].avgWeightG! - valid[1].avgWeightG!).toFixed(1) : null;
 
@@ -619,11 +688,25 @@ function HealthTab({ seasonId }: { seasonId: string }) {
                 bằng cách hủy hiệu lực kèm lý do.
             </div>
 
-            {logs.length === 0 && (
-                <EmptyState icon={Icons.heart} title="Chưa có bản ghi sức khỏe" />
+            <Segmented
+                fill
+                value={filter}
+                onChange={setFilter}
+                options={[
+                    { value: 'all', label: `Tất cả (${logs.length})` },
+                    { value: 'attention', label: `Chú ý (${attentionCount})` },
+                    { value: 'voided', label: `Vô hiệu (${voidedCount})` },
+                ]}
+            />
+
+            {visible.length === 0 && (
+                <EmptyState
+                    icon={Icons.heart}
+                    title={logs.length === 0 ? 'Chưa có bản ghi sức khỏe' : 'Không có bản ghi phù hợp'}
+                />
             )}
 
-            {logs.map((l) => {
+            {visible.map((l) => {
                 const hm = healthMeta[l.healthStatus];
                 return (
                     <button
@@ -631,9 +714,19 @@ function HealthTab({ seasonId }: { seasonId: string }) {
                         onClick={() => setDetail(l)}
                         className={`card w-full p-3.5 text-left transition active:scale-[0.99] ${l.voided ? 'opacity-60' : ''}`}
                     >
-                        <div className="flex items-center justify-between">
-                            <span className="text-[13px] font-bold text-ink">
-                                {fmtDate(l.recordedAt)} · {fmtTime(l.recordedAt)}
+                        <div className="flex items-start justify-between gap-2">
+                            <span className="flex min-w-0 items-center gap-2.5">
+                                <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-rose-50 text-rose-500">
+                                    <Icons.heart size={16} />
+                                </span>
+                                <span className="min-w-0">
+                                    <span className="block text-[13px] font-bold text-ink">
+                                        {fmtTime(l.recordedAt)}
+                                    </span>
+                                    <span className="block font-mono text-[10px] text-ink-muted">
+                                        {l.id} · {fmtDate(l.recordedAt)}
+                                    </span>
+                                </span>
                             </span>
                             {l.voided ? (
                                 <Badge tone="slate">Đã hủy hiệu lực</Badge>
@@ -670,9 +763,27 @@ function HealthTab({ seasonId }: { seasonId: string }) {
                                             l.mortalityCount != null ? num(l.mortalityCount) : '—',
                                         unit: 'con',
                                     },
+                                    {
+                                        label: 'Cỡ mẫu',
+                                        value: l.sampleSize != null ? num(l.sampleSize) : '—',
+                                        unit: 'con',
+                                    },
+                                    {
+                                        label: 'Quần thể',
+                                        value:
+                                            l.estimatedPopulation != null
+                                                ? num(l.estimatedPopulation)
+                                                : '—',
+                                        unit: 'con',
+                                    },
                                 ]}
                             />
                         </div>
+                        {l.note && (
+                            <p className="mt-2 rounded-xl bg-slate-50 p-3 text-[10px] leading-relaxed text-ink-soft">
+                                {l.note}
+                            </p>
+                        )}
                     </button>
                 );
             })}
@@ -699,6 +810,7 @@ function HealthForm({
     onClose: () => void;
     onSave: () => void;
 }) {
+    const [selectedHealth, setSelectedHealth] = useState<HealthLog['healthStatus']>('good');
     return (
         <Sheet
             open={open}
@@ -710,6 +822,12 @@ function HealthForm({
                 </PrimaryButton>
             }
         >
+            <div className="mb-3 rounded-xl bg-slate-50 px-3 py-2 text-[12px] text-ink-soft">
+                Thời điểm ghi nhận:{' '}
+                <span className="font-mono font-semibold text-ink">
+                    {fmtDateTime(new Date().toISOString())}
+                </span>
+            </div>
             <div className="grid grid-cols-2 gap-3">
                 <Field label="Số mẫu (chài)" unit="con">
                     <input className={inputClass} inputMode="numeric" placeholder="120" />
@@ -736,7 +854,13 @@ function HealthForm({
                         {(['excellent', 'good', 'warning', 'critical'] as const).map((h) => (
                             <button
                                 key={h}
-                                className="rounded-xl border border-line bg-white py-2 text-[12px] font-semibold text-ink-soft hover:border-ocean-400"
+                                type="button"
+                                onClick={() => setSelectedHealth(h)}
+                                className={`rounded-xl border py-2 text-[11px] font-semibold transition ${
+                                    selectedHealth === h
+                                        ? 'border-ocean-400 bg-ocean-50 text-ocean-700'
+                                        : 'border-line bg-white text-ink-soft'
+                                }`}
                             >
                                 {healthMeta[h].label}
                             </button>
@@ -838,6 +962,11 @@ function HealthDetail({ log, onClose }: { log: HealthLog | null; onClose: () => 
                             full
                             onClick={() => {
                                 if (!reason.trim()) return nav.toast('Vui lòng nhập lý do.');
+                                log.voided = {
+                                    at: new Date().toISOString(),
+                                    by: currentUser.name,
+                                    reason: reason.trim(),
+                                };
                                 onClose();
                                 nav.toast('Đã hủy hiệu lực bản ghi sức khỏe.');
                             }}
@@ -859,15 +988,62 @@ function HealthDetail({ log, onClose }: { log: HealthLog | null; onClose: () => 
 
 /* --------------------------------------------------------------------- ops */
 function OpsTab({ seasonId }: { seasonId: string }) {
+    const [filter, setFilter] = useState<'all' | 'planned' | 'completed' | 'cancelled'>('all');
     const ops = operations.filter((o) => o.seasonId === seasonId);
+    const generationWarnings = ops.filter((o) => !!o.blocked);
+    const schedules = ops.filter((o) => !o.blocked);
+    const visible = schedules.filter((o) => (filter === 'all' ? true : o.status === filter));
     // Distinguish: feeding+medicine (cữ ăn) vs mineral/chemical treatment.
-    const feed = ops.filter((o) => o.operationType === 'feeding' || o.operationType === 'medicine');
-    const treat = ops.filter(
+    const feed = visible.filter(
+        (o) => o.operationType === 'feeding' || o.operationType === 'medicine',
+    );
+    const treat = visible.filter(
         (o) => o.operationType === 'mineral' || o.operationType === 'chemical',
     );
 
     return (
-        <div className="space-y-5">
+        <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-2">
+                <Stat
+                    label="Chờ thực hiện"
+                    value={schedules.filter((o) => o.status === 'planned').length}
+                />
+                <Stat
+                    label="Hoàn thành"
+                    value={schedules.filter((o) => o.status === 'completed').length}
+                    tone="teal"
+                />
+                <Stat
+                    label="Đã hủy"
+                    value={schedules.filter((o) => o.status === 'cancelled').length}
+                />
+            </div>
+            {generationWarnings.map((warning) => (
+                <div
+                    key={warning.id}
+                    className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-[11px] leading-relaxed text-amber-700"
+                >
+                    <div className="flex items-center gap-1.5 font-bold">
+                        <Icons.warn size={14} /> Chưa thể sinh lịch kế tiếp
+                    </div>
+                    <p className="mt-1">{warning.blocked}</p>
+                </div>
+            ))}
+            <CompactFilterTabs
+                value={filter}
+                onChange={setFilter}
+                options={[
+                    { value: 'all', label: 'Tất cả' },
+                    { value: 'planned', label: 'Chờ làm' },
+                    { value: 'completed', label: 'Hoàn thành' },
+                    { value: 'cancelled', label: 'Đã hủy' },
+                ]}
+            />
+            {visible.length === 0 && (
+                <EmptyState icon={Icons.ops} title="Không có lịch vận hành phù hợp" />
+            )}
+            {visible.length > 0 && (
+            <>
             <div>
                 <div className="mb-2 flex items-center gap-2 px-1">
                     <span className={`grid size-6 place-items-center rounded-lg ${chip('teal')}`}>
@@ -902,6 +1078,8 @@ function OpsTab({ seasonId }: { seasonId: string }) {
                     )}
                 </div>
             </div>
+            </>
+            )}
         </div>
     );
 }
@@ -974,7 +1152,11 @@ function OpRow({ op }: { op: OperationSchedule }) {
 /* ------------------------------------------------------------------- cases */
 function CasesTab({ seasonId }: { seasonId: string }) {
     const nav = useNav();
+    const [tab, setTab] = useState<'open' | 'resolved'>('open');
     const cases = diseaseCases.filter((c) => c.seasonId === seasonId);
+    const openCases = cases.filter((c) => c.status !== 'resolved');
+    const resolvedCases = cases.filter((c) => c.status === 'resolved');
+    const visible = tab === 'open' ? openCases : resolvedCases;
     return (
         <div className="space-y-3">
             <PrimaryButton
@@ -985,14 +1167,26 @@ function CasesTab({ seasonId }: { seasonId: string }) {
             >
                 Tạo ca bệnh
             </PrimaryButton>
-            {cases.length === 0 && (
+            <Segmented
+                value={tab}
+                onChange={setTab}
+                options={[
+                    { value: 'open', label: `Đang xử lý (${openCases.length})` },
+                    { value: 'resolved', label: `Đã giải quyết (${resolvedCases.length})` },
+                ]}
+            />
+            {visible.length === 0 && (
                 <EmptyState
-                    icon={Icons.warn}
-                    title="Chưa có ca bệnh"
-                    hint="Tạo ca bệnh khi phát hiện dấu hiệu bất thường để chuyên gia hỗ trợ."
+                    icon={Icons.diseaseCase}
+                    title={cases.length === 0 ? 'Chưa có ca bệnh' : 'Không có ca bệnh ở trạng thái này'}
+                    hint={
+                        cases.length === 0
+                            ? 'Tạo ca bệnh khi phát hiện dấu hiệu bất thường để chuyên gia hỗ trợ.'
+                            : undefined
+                    }
                 />
             )}
-            {cases.map((c) => {
+            {visible.map((c) => {
                 const cm = caseStatusMeta[c.status];
                 return (
                     <button
@@ -1000,15 +1194,20 @@ function CasesTab({ seasonId }: { seasonId: string }) {
                         onClick={() => nav.go('case', { id: c.id })}
                         className="card w-full p-3.5 text-left transition active:scale-[0.99]"
                     >
-                        <div className="flex items-start justify-between gap-2">
-                            <span className="text-[14px] font-bold text-ink">{c.title}</span>
+                        <div className="flex items-start gap-3">
+                            <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-rose-50 text-rose-500">
+                                <Icons.diseaseCase size={17} />
+                            </span>
+                            <div className="min-w-0 flex-1">
+                                <span className="block text-[14px] font-bold text-ink">{c.title}</span>
+                                <p className="mt-1 line-clamp-2 text-[12px] text-ink-soft">
+                                    {c.description}
+                                </p>
+                            </div>
                             <Badge tone={cm.tone} dot>
                                 {cm.label}
                             </Badge>
                         </div>
-                        <p className="mt-1 line-clamp-2 text-[12px] text-ink-soft">
-                            {c.description}
-                        </p>
                         <div className="mt-2 flex items-center gap-2 text-[11px] text-ink-muted">
                             <span className="font-mono">{c.id}</span> · {c.expertName} ·{' '}
                             {c.responses.length} phản hồi

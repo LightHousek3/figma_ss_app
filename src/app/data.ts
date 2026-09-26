@@ -33,7 +33,6 @@ export interface Season {
   stockingDate: string // ISO date
   dayOfCulture: number
   initialQuantity: number
-  initialAvgWeightG: number
   latestBiomassKg: number | null
   latestAvgWeightG: number | null
   estimatedPopulation: number | null
@@ -53,6 +52,7 @@ export interface WaterLog {
   nh3MgL?: number
   no2MgL?: number
   alkalinity?: number
+  h2sMgL?: number
   note?: string
   voided?: { at: string; by: string; reason: string }
 }
@@ -81,6 +81,9 @@ export interface OperationSchedule {
   plannedQuantity: number
   unit: string
   doseBasis: "fixed_quantity" | "per_kg_biomass" | "percent_biomass" | "per_m3_water"
+  basisQuantity?: number
+  basisUnit?: "kg_biomass" | "m3_water"
+  calculationVersion?: string
   mealNumber?: number
   instructions?: string
   status: OperationStatus
@@ -105,6 +108,9 @@ export interface Task {
   dueAt: string
   seasonId?: string
   assignedBy: string
+  startedAt?: string
+  completedAt?: string
+  cancellationReason?: string
 }
 
 export interface CaseResponse {
@@ -126,6 +132,16 @@ export interface DiseaseCase {
   expertName: string
   createdAt: string
   aiLabel?: string
+  caseSnapshot?: {
+    healthStatus?: HealthStatus
+    avgWeightG?: number
+    mortalityCount?: number
+    estimatedBiomassKg?: number
+    ph?: number
+    doMgL?: number
+    nh3MgL?: number
+    no2MgL?: number
+  }
   responses: CaseResponse[]
 }
 
@@ -138,6 +154,10 @@ export interface AiDiagnosis {
   confidence?: number
   recommendation?: string
   imageCount: number
+  modelVersion?: string
+  processingTimeMs?: number
+  errorCode?: string
+  errorMessage?: string
 }
 
 export interface ChatQuery {
@@ -147,6 +167,7 @@ export interface ChatQuery {
   status: "answered" | "no_source" | "low_match" | "error"
   createdAt: string
   rating?: number
+  feedbackComment?: string
 }
 
 export interface Notification {
@@ -163,22 +184,61 @@ export interface Notification {
 
 // ---------------------------------------------------------------------------
 
-export const currentUser = {
-  name: "Nguyễn Văn Đạt",
-  role: "Chủ trang trại",
-  roleKey: "farm_owner" as const,
-  email: "owner@smartshrimp.vn",
-  phone: "0901 234 567",
-  ownerName: undefined as string | undefined,
-  memberSince: "2023-06",
-  // owner KPI fields
-  totalFarms: 2,
-  totalPersonnel: 4,
-  pendingApprovals: 2,
-  // KTV legacy fields (kept 0 for owner)
-  seasonsParticipated: 0,
-  completedTasks: 0,
-  onTimeRatePct: 0,
+export type AppAccountRole = "farm_owner" | "technician"
+
+interface CurrentUser {
+  name: string
+  role: string
+  roleKey: AppAccountRole
+  email: string
+  phone: string
+  ownerName?: string
+  memberSince: string
+  totalFarms: number
+  totalPersonnel: number
+  pendingApprovals: number
+  seasonsParticipated: number
+  completedTasks: number
+  onTimeRatePct: number
+}
+
+export const accountProfiles: Record<AppAccountRole, CurrentUser> = {
+  farm_owner: {
+    name: "Nguyễn Văn Đạt",
+    role: "Chủ trang trại",
+    roleKey: "farm_owner",
+    email: "owner@smartshrimp.vn",
+    phone: "0901 234 567",
+    memberSince: "2023-06",
+    totalFarms: 2,
+    totalPersonnel: 4,
+    pendingApprovals: 2,
+    seasonsParticipated: 0,
+    completedTasks: 0,
+    onTimeRatePct: 0,
+  },
+  technician: {
+    name: "Cô Thái Bảo",
+    role: "Kỹ thuật viên",
+    roleKey: "technician",
+    email: "technician@smartshrimp.vn",
+    phone: "0908 246 810",
+    ownerName: "Nông trại Minh Phú",
+    memberSince: "2024-02",
+    totalFarms: 0,
+    totalPersonnel: 0,
+    pendingApprovals: 0,
+    seasonsParticipated: 3,
+    completedTasks: 28,
+    onTimeRatePct: 92,
+  },
+}
+
+export const currentUser: CurrentUser = { ...accountProfiles.technician }
+
+export function applyCurrentUserRole(role: AppAccountRole) {
+  Object.assign(currentUser, accountProfiles[role])
+  if (role === "farm_owner") delete currentUser.ownerName
 }
 
 export const farms: Farm[] = [
@@ -203,7 +263,6 @@ export const seasons: Season[] = [
     stockingDate: "2026-06-28",
     dayOfCulture: 72,
     initialQuantity: 480000,
-    initialAvgWeightG: 0.02,
     latestBiomassKg: 4851,
     latestAvgWeightG: 12.4,
     estimatedPopulation: 391200,
@@ -220,7 +279,6 @@ export const seasons: Season[] = [
     stockingDate: "2026-07-20",
     dayOfCulture: 50,
     initialQuantity: 420000,
-    initialAvgWeightG: 0.02,
     latestBiomassKg: 690,
     latestAvgWeightG: 8.1,
     estimatedPopulation: 390000,
@@ -237,7 +295,6 @@ export const seasons: Season[] = [
     stockingDate: "2026-08-25",
     dayOfCulture: 14,
     initialQuantity: 350000,
-    initialAvgWeightG: 0.03,
     latestBiomassKg: null,
     latestAvgWeightG: null,
     estimatedPopulation: null,
@@ -254,7 +311,6 @@ export const seasons: Season[] = [
     stockingDate: "2026-09-15",
     dayOfCulture: 0,
     initialQuantity: 520000,
-    initialAvgWeightG: 0.02,
     latestBiomassKg: null,
     latestAvgWeightG: null,
     estimatedPopulation: null,
@@ -276,6 +332,7 @@ export const waterLogs: WaterLog[] = [
     nh3MgL: 0.012,
     no2MgL: 0.08,
     alkalinity: 142,
+    h2sMgL: 0,
     note: "Các chỉ số đã về ngưỡng theo dõi sau xử lý.",
   },
   {
@@ -289,6 +346,7 @@ export const waterLogs: WaterLog[] = [
     nh3MgL: 0.18,
     no2MgL: 0.9,
     alkalinity: 138,
+    h2sMgL: 0.012,
   },
   {
     id: "W-1031",
@@ -301,6 +359,7 @@ export const waterLogs: WaterLog[] = [
     nh3MgL: 0.12,
     no2MgL: 0.6,
     alkalinity: 140,
+    h2sMgL: 0,
     voided: {
       at: "2026-09-06T09:00:00",
       by: "Cô Thái Bảo",
@@ -318,6 +377,7 @@ export const waterLogs: WaterLog[] = [
     nh3MgL: 0.08,
     no2MgL: 0.4,
     alkalinity: 132,
+    h2sMgL: 0,
   },
 ]
 
@@ -372,6 +432,9 @@ export const operations: OperationSchedule[] = [
     plannedQuantity: 47.2,
     unit: "kg",
     doseBasis: "percent_biomass",
+    basisQuantity: 4851,
+    basisUnit: "kg_biomass",
+    calculationVersion: "dose-v1",
     mealNumber: 1,
     instructions: "Rải đều quanh ao, kiểm tra nhá sau 2 giờ.",
     status: "completed",
@@ -395,6 +458,9 @@ export const operations: OperationSchedule[] = [
     plannedQuantity: 47.2,
     unit: "kg",
     doseBasis: "percent_biomass",
+    basisQuantity: 4851,
+    basisUnit: "kg_biomass",
+    calculationVersion: "dose-v1",
     mealNumber: 2,
     instructions: "Giảm 10% nếu trời âm u, DO thấp.",
     status: "planned",
@@ -409,6 +475,9 @@ export const operations: OperationSchedule[] = [
     plannedQuantity: 4.48,
     unit: "l",
     doseBasis: "per_m3_water",
+    basisQuantity: 4480,
+    basisUnit: "m3_water",
+    calculationVersion: "dose-v1",
     instructions: "Tạt lúc trời nắng, chạy quạt. Xử lý NO2 cao.",
     status: "planned",
   },
@@ -421,6 +490,9 @@ export const operations: OperationSchedule[] = [
     plannedQuantity: 22.4,
     unit: "kg",
     doseBasis: "per_m3_water",
+    basisQuantity: 4480,
+    basisUnit: "m3_water",
+    calculationVersion: "dose-v1",
     instructions: "Tạt chiều mát, ổn định độ kiềm & hỗ trợ lột xác.",
     status: "planned",
   },
@@ -507,6 +579,8 @@ export const tasks: Task[] = [
     dueAt: `${today}T12:00:00`,
     seasonId: "S-A3",
     assignedBy: "Nông trại Minh Phú",
+    startedAt: "2026-09-07T14:55:00",
+    completedAt: "2026-09-07T15:20:00",
   },
   {
     id: "T-302",
@@ -552,6 +626,16 @@ export const diseaseCases: DiseaseCase[] = [
     expertName: "TS. Phạm Hải Đăng",
     createdAt: "2026-09-05T17:20:00",
     aiLabel: "White Feces Syndrome (nghi ngờ)",
+    caseSnapshot: {
+      healthStatus: "warning",
+      avgWeightG: 12.4,
+      mortalityCount: 340,
+      estimatedBiomassKg: 4851,
+      ph: 8.6,
+      doMgL: 4.1,
+      nh3MgL: 0.32,
+      no2MgL: 1.9,
+    },
     responses: [
       {
         id: "r1",
@@ -600,6 +684,16 @@ export const diseaseCases: DiseaseCase[] = [
     status: "monitoring",
     expertName: "TS. Phạm Hải Đăng",
     createdAt: "2026-09-02T10:00:00",
+    caseSnapshot: {
+      healthStatus: "good",
+      avgWeightG: 8.1,
+      mortalityCount: 90,
+      estimatedBiomassKg: 690,
+      ph: 7.9,
+      doMgL: 5.4,
+      nh3MgL: 0.08,
+      no2MgL: 0.4,
+    },
     responses: [
       {
         id: "r1",
@@ -625,6 +719,8 @@ export const aiDiagnoses: AiDiagnosis[] = [
     recommendation:
       "Dấu hiệu phù hợp hội chứng phân trắng. Nên giảm khẩu phần ăn, bổ sung men vi sinh và tạo Disease Case để chuyên gia đánh giá.",
     imageCount: 4,
+    modelVersion: "shrimp-vision-v2.4",
+    processingTimeMs: 1840,
   },
   {
     id: "AI-225",
@@ -636,6 +732,8 @@ export const aiDiagnoses: AiDiagnosis[] = [
     recommendation:
       "Không phát hiện dấu hiệu bệnh rõ ràng. Tiếp tục theo dõi định kỳ.",
     imageCount: 3,
+    modelVersion: "shrimp-vision-v2.4",
+    processingTimeMs: 1520,
   },
 ]
 
@@ -683,7 +781,7 @@ export const notifications: Notification[] = [
     seasonId: "S-A3",
     createdAt: `${today}T05:00:00`,
     read: false,
-    action: { label: "Ghi nhận sức khỏe", nav: "pond:S-A3" },
+    action: { label: "Ghi nhận sức khỏe", nav: "health:S-A3" },
   },
   {
     id: "N-3",
@@ -695,7 +793,7 @@ export const notifications: Notification[] = [
     seasonId: "S-A3",
     createdAt: `${today}T10:45:00`,
     read: false,
-    action: { label: "Xem hoạt động", nav: "pond:S-A3" },
+    action: { label: "Xem hoạt động", nav: "op:OP-8803" },
   },
   {
     id: "N-4",

@@ -309,7 +309,7 @@ export function PersonnelDetail({ personId }: { personId: string }) {
                         ) : (
                             <>
                                 <PersonnelKpiCard
-                                    icon={Icons.heart}
+                                    icon={Icons.diseaseCase}
                                     label="Ca bệnh xử lý"
                                     value={expertCases.length.toLocaleString('vi-VN')}
                                     hint="Tất cả ca được phân công"

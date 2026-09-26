@@ -76,7 +76,14 @@ export default function Home() {
             {warnings.map((w) => (
               <button
                 key={w.id}
-                onClick={() => (w.action?.nav.startsWith("pond:") ? nav.go("pond", { seasonId: w.action.nav.slice(5) }) : nav.setTab("notifications"))}
+                onClick={() => {
+                  const target = w.action?.nav;
+                  if (target?.startsWith("pond:"))
+                    nav.go("pond", { seasonId: target.slice(5) });
+                  else if (target?.startsWith("health:"))
+                    nav.go("health", { seasonId: target.slice(7) });
+                  else nav.setTab("notifications");
+                }}
                 className="flex w-full items-start gap-3 rounded-2xl border border-amber-500/30 bg-amber-50/70 p-3 text-left transition active:scale-[0.99]"
               >
                 <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-xl bg-amber-500/15 text-amber-500">

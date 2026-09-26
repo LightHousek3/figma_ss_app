@@ -8,6 +8,7 @@ import {
   PrimaryButton,
 } from "../app/ui"
 import logo from "../imports/logo.png"
+import type { AppAccountRole } from "../app/data"
 
 type Step = "login" | "activate" | "verify" | "complete" | "forgot" | "forgot-verify" | "forgot-newpw"
 
@@ -20,7 +21,7 @@ const MIN_PW_LENGTH = 6 // BR-AUTH: minimum password length
 
 export default function Auth() {
   const [step, setStep] = useState<Step>("login")
-  const [email, setEmail] = useState("owner@smartshrimp.vn")
+  const [email, setEmail] = useState("technician@smartshrimp.vn")
   // Shared resend gate persists across activate→verify and forgot→forgot-verify
   const [resendLeft, setResendLeft] = useState(0)
 
@@ -161,9 +162,15 @@ function LoginStep({
   const [showPw, setShowPw] = useState(false)
   const [password, setPassword] = useState("password")
   const [error, setError] = useState("")
+  const accounts: { role: AppAccountRole; label: string; email: string }[] = [
+    { role: "farm_owner", label: "Chủ trại", email: "owner@smartshrimp.vn" },
+    { role: "technician", label: "KTV", email: "technician@smartshrimp.vn" },
+  ]
+  const normalizedEmail = email.trim().toLowerCase()
+  const selectedAccount = accounts.find((account) => account.email === normalizedEmail)
   const submit = () => {
-    if (email.trim().toLowerCase() !== "owner@smartshrimp.vn") {
-      setError("Dùng tài khoản Chủ trại owner@smartshrimp.vn cho bản demo này.")
+    if (!selectedAccount) {
+      setError("Vui lòng dùng tài khoản Chủ trại hoặc KTV được cung cấp.")
       return
     }
     if (!password) {
@@ -171,7 +178,7 @@ function LoginStep({
       return
     }
     setError("")
-    nav.login()
+    nav.login(selectedAccount.role)
   }
   return (
     <div className="flex flex-1 flex-col justify-center">
@@ -180,7 +187,29 @@ function LoginStep({
         <div className="font-display text-[16px] font-bold text-ink">
           Đăng nhập
         </div>
-        <Field label="Email" error={error && email.trim().toLowerCase() !== "owner@smartshrimp.vn" ? error : undefined}>
+        <div className="grid grid-cols-2 gap-2 rounded-2xl bg-slate-100 p-1">
+          {accounts.map((account) => {
+            const active = account.email === normalizedEmail
+            return (
+              <button
+                key={account.role}
+                type="button"
+                onClick={() => {
+                  setEmail(account.email)
+                  setError("")
+                }}
+                className={`min-w-0 rounded-xl px-2 py-2.5 text-[12px] font-bold transition ${
+                  active
+                    ? "bg-white text-ocean-700 shadow-sm"
+                    : "text-ink-muted active:bg-white/60"
+                }`}
+              >
+                {account.label}
+              </button>
+            )
+          })}
+        </div>
+        <Field label="Email" error={error && !selectedAccount ? error : undefined}>
           <input
             className={`${inputClass} font-sans`}
             placeholder="ban@trangtrai.vn"

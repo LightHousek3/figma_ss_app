@@ -82,8 +82,6 @@ export interface OwnerSeason {
   expectedEndDate?: string
   actualEndDate?: string
   initialQuantity?: number
-  initialAvgWeightG?: number
-  initialBiomassKg?: number
   initialDensityPerM2?: number
   cancellationReason?: string
   // denormalized for display
@@ -540,8 +538,6 @@ export const ownerSeasons: OwnerSeason[] = [
     stockingDate: "2026-06-28",
     expectedEndDate: "2026-10-15",
     initialQuantity: 480000,
-    initialAvgWeightG: 0.02,
-    initialBiomassKg: 9.6,
     initialDensityPerM2: 150,
     pondName: "Ao A3",
     farmId: "F1",
@@ -561,8 +557,6 @@ export const ownerSeasons: OwnerSeason[] = [
     stockingDate: "2026-07-20",
     expectedEndDate: "2026-11-10",
     initialQuantity: 420000,
-    initialAvgWeightG: 0.02,
-    initialBiomassKg: 8.4,
     initialDensityPerM2: 150,
     pondName: "Ao A5",
     farmId: "F1",
@@ -582,8 +576,6 @@ export const ownerSeasons: OwnerSeason[] = [
     stockingDate: "2026-08-25",
     expectedEndDate: "2027-01-20",
     initialQuantity: 350000,
-    initialAvgWeightG: 0.03,
-    initialBiomassKg: 10.5,
     initialDensityPerM2: 100,
     pondName: "Ao B1",
     farmId: "F1",
@@ -603,8 +595,6 @@ export const ownerSeasons: OwnerSeason[] = [
     stockingDate: "2026-09-20",
     expectedEndDate: "2027-01-15",
     initialQuantity: 520000,
-    initialAvgWeightG: 0.02,
-    initialBiomassKg: 10.4,
     initialDensityPerM2: 130,
     pondName: "Ao D2",
     farmId: "F2",
@@ -1767,7 +1757,7 @@ export const latestHealthForSeason = (
 // ── Derived KPI metrics (computed from health log + season data) ──────────────
 // survivalRatePct = estimatedPopulation / season.initialQuantity * 100
 // growthG = latest avgWeightG − previous avgWeightG
-// fcr = total_feed_used_kg / (current_biomass_kg − initial_biomass_kg)  [mocked]
+// estimated FCR = total_feed_used_kg / (current biomass + harvested biomass) [mocked]
 
 export interface SeasonKpi {
   survivalRatePct: number

@@ -10,8 +10,6 @@ import {
 } from '../app/ownerData';
 import profileBg from '@/imports/profile_background.png';
 
-const isOwner = currentUser.roleKey === 'farm_owner';
-
 /* ------------------------------------------------------------------ KPI card */
 function KpiCard({
     topLabel,
@@ -76,6 +74,7 @@ function ActionRow({
 /* --------------------------------------------------------------------- main */
 export function Account() {
     const nav = useNav();
+    const isOwner = nav.accountRole === 'farm_owner';
     const initials = currentUser.name.split(' ').slice(-1)[0][0];
     const joined = new Date(currentUser.memberSince + '-01').toLocaleDateString('vi-VN', {
         month: 'long',
@@ -90,7 +89,7 @@ export function Account() {
     }[] = [
         { icon: 'mail', label: 'Email', value: currentUser.email },
         { icon: 'phone', label: 'Số điện thoại', value: currentUser.phone },
-        { icon: 'ops', label: 'Vai trò hệ thống', value: 'Chủ trang trại' },
+        { icon: 'ops', label: 'Vai trò hệ thống', value: currentUser.role },
         ...(!isOwner && currentUser.ownerName
             ? [
                   {
@@ -158,6 +157,75 @@ export function Account() {
                                 </span>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                {/* Account role switcher */}
+                <div>
+                    <div className="mb-2 flex items-center justify-between px-1">
+                        <span className="font-display text-[14px] font-bold text-ink">
+                            Chuyển tài khoản
+                        </span>
+                        <span className="text-[10px] font-medium text-ink-muted">
+                            Dữ liệu theo đúng vai trò
+                        </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 rounded-2xl bg-white p-1.5 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
+                        {[
+                            {
+                                role: 'farm_owner' as const,
+                                label: 'Chủ trại',
+                                email: 'owner@smartshrimp.vn',
+                                icon: Icons.building,
+                            },
+                            {
+                                role: 'technician' as const,
+                                label: 'KTV',
+                                email: 'technician@smartshrimp.vn',
+                                icon: Icons.user,
+                            },
+                        ].map((account) => {
+                            const active = nav.accountRole === account.role;
+                            const AccountIcon = account.icon;
+                            return (
+                                <button
+                                    key={account.role}
+                                    type="button"
+                                    onClick={() => nav.switchAccount(account.role)}
+                                    aria-pressed={active}
+                                    className={`min-w-0 rounded-xl px-2 py-3 text-left transition active:scale-[0.98] ${
+                                        active
+                                            ? 'bg-ocean-600 text-white shadow-[0_5px_14px_rgba(2,132,199,.25)]'
+                                            : 'bg-slate-50 text-ink'
+                                    }`}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <span
+                                            className={`grid size-7 shrink-0 place-items-center rounded-lg ${
+                                                active
+                                                    ? 'bg-white/20 text-white'
+                                                    : 'bg-ocean-50 text-ocean-600'
+                                            }`}
+                                        >
+                                            <AccountIcon size={15} />
+                                        </span>
+                                        <span className="truncate text-[12px] font-bold">
+                                            {account.label}
+                                        </span>
+                                        {active && (
+                                            <Icons.check className="ml-auto shrink-0" size={15} />
+                                        )}
+                                    </div>
+                                    <div
+                                        className={`mt-1.5 truncate text-[9px] ${
+                                            active ? 'text-white/75' : 'text-ink-muted'
+                                        }`}
+                                    >
+                                        {account.email}
+                                    </div>
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
 
