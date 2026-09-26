@@ -36,6 +36,9 @@ import {
   SeasonEdit,
   HarvestRecord,
   HarvestDetail,
+  HarvestList,
+  OwnerWaterLogList,
+  OwnerHealthLogList,
 } from "./screens/owner/OwnerSeasons"
 import {
   PersonnelList,
@@ -159,6 +162,12 @@ function StackRoute({
         return <HarvestRecord seasonId={p.seasonId} />
       case "owner-harvest-detail":
         return <HarvestDetail harvestId={p.harvestId} />
+      case "owner-harvest-list":
+        return <HarvestList seasonId={p.seasonId} />
+      case "owner-water-logs":
+        return <OwnerWaterLogList seasonId={p.seasonId} />
+      case "owner-health-logs":
+        return <OwnerHealthLogList seasonId={p.seasonId} />
       // Personnel (UC 20-23)
       case "owner-personnel-list":
         return <PersonnelList />

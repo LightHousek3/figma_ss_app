@@ -154,8 +154,8 @@ export function SeasonProtocolList({ seasonId }: { seasonId: string }) {
     return (
         <div className="pb-8">
             <ScreenHeader
-                title="Phác đồ vụ nuôi"
-                subtitle={season ? `${season.pondName} · ${season.farmName}` : undefined}
+                title="Phác đồ"
+                subtitle={season ? `${season.pondName} · ${season.name}` : undefined}
             />
             <div className="space-y-3 px-4">
                 <Segmented
@@ -287,7 +287,10 @@ export function SeasonProtocolDetail({ protocolId }: { protocolId: string }) {
 
     return (
         <div className="pb-8">
-            <ScreenHeader title="Chi tiết phác đồ" />
+            <ScreenHeader
+                title="Chi tiết phác đồ"
+                subtitle={season ? `${season.pondName} · ${season.name}` : undefined}
+            />
             <div className="space-y-4 px-4">
                 <div
                     className={`overflow-hidden rounded-2xl bg-white shadow-[0_2px_14px_rgba(0,0,0,.07)] ${
@@ -1828,7 +1831,7 @@ function ProtocolAudit({ protocol }: { protocol: PendingProtocol }) {
                                             </Badge>
                                         )}
                                         {entry.fromStatus && (
-                                            <span className="text-[10px] text-ink-muted">→</span>
+                                            <Icons.chevronR size={13} className="text-ink-muted" />
                                         )}
                                         <Badge tone={to.tone} dot>
                                             {to.label}
@@ -2090,7 +2093,7 @@ export function SeasonCaseList({ seasonId }: { seasonId: string }) {
         <div className="pb-8">
             <ScreenHeader
                 title="Ca bệnh"
-                subtitle={season ? `${season.pondName} · ${season.farmName}` : undefined}
+                subtitle={season ? `${season.pondName} · ${season.name}` : undefined}
             />
             <div className="space-y-3 px-4">
                 {cases.length === 0 ? (

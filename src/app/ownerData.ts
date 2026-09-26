@@ -1536,7 +1536,7 @@ export interface OwnerWaterLog {
   voidReason?: string
 }
 
-export const latestWaterLogs: OwnerWaterLog[] = [
+export const ownerWaterLogs: OwnerWaterLog[] = [
   {
     id: "WL-A3-1",
     seasonId: "S-A3",
@@ -1550,6 +1550,52 @@ export const latestWaterLogs: OwnerWaterLog[] = [
     no2MgL: 0.08,
     alkalinityMgLCaCO3: 142,
     h2sMgL: 0.0,
+    isVoided: false,
+  },
+  {
+    id: "WL-A3-2",
+    seasonId: "S-A3",
+    recordedAt: "2026-09-17T16:10:00",
+    recordedByName: "Cô Thái Bảo",
+    temperatureC: 29.4,
+    ph: 8.6,
+    dissolvedOxygenMgL: 4.1,
+    salinityPpt: 18,
+    nh3MgL: 0.32,
+    no2MgL: 1.9,
+    alkalinityMgLCaCO3: 142,
+    h2sMgL: 0.02,
+    note: "Sau mưa, tôm giảm bắt mồi. Đã tăng quạt nước và báo Chuyên gia.",
+    isVoided: false,
+  },
+  {
+    id: "WL-A3-VOID",
+    seasonId: "S-A3",
+    recordedAt: "2026-09-17T06:05:00",
+    recordedByName: "Cô Thái Bảo",
+    temperatureC: 39.5,
+    ph: 7.7,
+    dissolvedOxygenMgL: 5.1,
+    salinityPpt: 15.1,
+    isVoided: true,
+    voidedByName: "Cô Thái Bảo",
+    voidedAt: "2026-09-17T06:12:00",
+    voidReason: "Đầu dò nhiệt chưa ổn định; KTV đo lại sau khi hiệu chuẩn.",
+  },
+  {
+    id: "WL-A3-3",
+    seasonId: "S-A3",
+    recordedAt: "2026-09-16T06:10:00",
+    recordedByName: "Cô Thái Bảo",
+    temperatureC: 28.2,
+    ph: 7.9,
+    dissolvedOxygenMgL: 5.4,
+    salinityPpt: 15.0,
+    nh3MgL: 0.01,
+    no2MgL: 0.06,
+    alkalinityMgLCaCO3: 140,
+    h2sMgL: 0,
+    note: "Nước ổn định, màu tảo phù hợp.",
     isVoided: false,
   },
   {
@@ -1584,8 +1630,14 @@ export const latestWaterLogs: OwnerWaterLog[] = [
   },
 ]
 
+// Kept as a compatibility read model for protocol source lookups.
+export const latestWaterLogs = ownerWaterLogs
+export const waterLogsForSeason = (seasonId: string) =>
+  ownerWaterLogs
+    .filter((log) => log.seasonId === seasonId)
+    .sort((a, b) => b.recordedAt.localeCompare(a.recordedAt))
 export const latestWaterForSeason = (seasonId: string): OwnerWaterLog | null =>
-  latestWaterLogs.find((w) => w.seasonId === seasonId && !w.isVoided) ?? null
+  waterLogsForSeason(seasonId).find((log) => !log.isVoided) ?? null
 
 // ── shrimp_health_logs — mirrors DB schema exactly ────────────────────────────
 // health_status enum: "excellent" | "good" | "warning" | "critical"
@@ -1620,7 +1672,7 @@ export const prevHealthLogs: Pick<OwnerHealthLog, "seasonId" | "avgWeightG" | "r
     { seasonId: "S-B1", avgWeightG: 1.2, recordedAt: "2026-09-11T06:45:00" },
   ]
 
-export const latestHealthLogs: OwnerHealthLog[] = [
+export const ownerHealthLogs: OwnerHealthLog[] = [
   {
     id: "HL-A3-1",
     seasonId: "S-A3",
@@ -1635,6 +1687,39 @@ export const latestHealthLogs: OwnerHealthLog[] = [
     healthStatus: "warning",
     note: "Tôm vẫn còn dấu hiệu phân trắng, giảm bắt mồi cữ chiều, đang điều trị.",
     isVoided: false,
+  },
+  {
+    id: "HL-A3-2",
+    seasonId: "S-A3",
+    recordedAt: "2026-09-11T07:00:00",
+    recordedByName: "Cô Thái Bảo",
+    sampleSize: 110,
+    avgWeightG: 9.3,
+    avgLengthCm: 9.8,
+    mortalityCount: 120,
+    estimatedPopulation: 398500,
+    estimatedBiomassKg: 3706,
+    healthStatus: "good",
+    note: "Tôm bắt mồi tốt, đường ruột đầy, vỏ cứng.",
+    isVoided: false,
+  },
+  {
+    id: "HL-A3-VOID",
+    seasonId: "S-A3",
+    recordedAt: "2026-09-14T07:10:00",
+    recordedByName: "Cô Thái Bảo",
+    sampleSize: 20,
+    avgWeightG: 18.2,
+    avgLengthCm: 12.1,
+    mortalityCount: 0,
+    estimatedPopulation: 398000,
+    estimatedBiomassKg: 7244,
+    healthStatus: "excellent",
+    note: "Mẫu thử ban đầu.",
+    isVoided: true,
+    voidedByName: "Cô Thái Bảo",
+    voidedAt: "2026-09-14T07:25:00",
+    voidReason: "Cỡ mẫu không đủ đại diện, số liệu sinh khối sai lệch.",
   },
   {
     id: "HL-A5-1",
@@ -1668,10 +1753,16 @@ export const latestHealthLogs: OwnerHealthLog[] = [
   },
 ]
 
+// Kept as a compatibility read model for protocol source-health references.
+export const latestHealthLogs = ownerHealthLogs
+export const healthLogsForSeason = (seasonId: string) =>
+  ownerHealthLogs
+    .filter((log) => log.seasonId === seasonId)
+    .sort((a, b) => b.recordedAt.localeCompare(a.recordedAt))
 export const latestHealthForSeason = (
   seasonId: string,
 ): OwnerHealthLog | null =>
-  latestHealthLogs.find((h) => h.seasonId === seasonId && !h.isVoided) ?? null
+  healthLogsForSeason(seasonId).find((log) => !log.isVoided) ?? null
 
 // ── Derived KPI metrics (computed from health log + season data) ──────────────
 // survivalRatePct = estimatedPopulation / season.initialQuantity * 100

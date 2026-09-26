@@ -52,10 +52,12 @@ const fmtDate = (iso?: string) =>
 export function PersonnelList() {
     const nav = useNav();
     const [roleFilter, setRoleFilter] = useState<'all' | 'technician' | 'expert'>('all');
+    const [statusFilter, setStatusFilter] = useState<'all' | Personnel['status']>('all');
     const [search, setSearch] = useState('');
     const visible = ownerPersonnel.filter(
         (person) =>
             (roleFilter === 'all' || person.role === roleFilter) &&
+            (statusFilter === 'all' || person.status === statusFilter) &&
             (!search.trim() ||
                 person.fullName.toLowerCase().includes(search.trim().toLowerCase()) ||
                 person.phone?.includes(search.trim())),
@@ -74,15 +76,41 @@ export function PersonnelList() {
                         onChange={(event) => setSearch(event.target.value)}
                     />
                 </div>
-                <Segmented
-                    value={roleFilter}
-                    onChange={setRoleFilter}
-                    options={[
-                        { value: 'all', label: 'Tất cả' },
-                        { value: 'technician', label: 'Kỹ thuật viên' },
-                        { value: 'expert', label: 'Chuyên gia' },
-                    ]}
-                />
+                <div className="flex items-stretch gap-0.2">
+                    <div className="min-w-0 flex-1">
+                        <Segmented
+                            fill
+                            value={roleFilter}
+                            onChange={setRoleFilter}
+                            options={[
+                                { value: 'all', label: 'Tất cả' },
+                                { value: 'technician', label: 'KTV' },
+                                { value: 'expert', label: 'Chuyên gia' },
+                            ]}
+                        />
+                    </div>
+                    <label className="relative w-[124px] shrink-0 flex">
+                        <span className="sr-only">Lọc theo trạng thái nhân sự</span>
+                        <select
+                            aria-label="Lọc theo trạng thái nhân sự"
+                            value={statusFilter}
+                            onChange={(event) =>
+                                setStatusFilter(event.target.value as 'all' | Personnel['status'])
+                            }
+                            className="h-[47px]! m-auto w-full appearance-none rounded-2xl border border-line bg-white p-1 pl-3 pr-8 text-[10px] font-semibold text-ink-soft outline-none transition focus:border-ocean-400 focus:ring-2 focus:ring-ocean-100"
+                        >
+                            <option value="all">Mọi trạng thái</option>
+                            <option value="active">Hoạt động</option>
+                            <option value="pending_activation">Chờ kích hoạt</option>
+                            <option value="inactive">Không hoạt động</option>
+                            <option value="blocked">Đã khóa</option>
+                        </select>
+                        <Icons.chevronD
+                            size={14}
+                            className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-muted"
+                        />
+                    </label>
+                </div>
 
                 {visible.length === 0 ? (
                     <EmptyState icon={Icons.users} title="Không có nhân sự" />

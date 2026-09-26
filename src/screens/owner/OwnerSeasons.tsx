@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ComponentType } from 'react';
 import { useNav } from '../../app/store';
 import {
     Icons,
@@ -22,8 +22,8 @@ import {
     harvestEvents,
     harvestsForSeason,
     assignmentsForSeason,
-    latestWaterForSeason,
-    latestHealthForSeason,
+    waterLogsForSeason,
+    healthLogsForSeason,
     seasonKpiFor,
     protocolsForSeason,
     casesForSeason,
@@ -170,10 +170,18 @@ function SeasonCard({ season: s, onClick }: { season: OwnerSeason; onClick: () =
                     </div>
                 )}
                 {s.status === 'planning' && (
-                    <div className="mt-1 text-[11px] text-violet-600 font-semibold">
-                        {s.hasApprovedProtocol
-                            ? '✓ Phác đồ đã duyệt'
-                            : '⚠ Chưa có phác đồ được duyệt'}
+                    <div className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-violet-600">
+                        {s.hasApprovedProtocol ? (
+                            <>
+                                <Icons.check size={13} className="shrink-0" />
+                                <span>Phác đồ đã duyệt</span>
+                            </>
+                        ) : (
+                            <>
+                                <Icons.warn size={13} className="shrink-0" />
+                                <span>Chưa có phác đồ được duyệt</span>
+                            </>
+                        )}
                     </div>
                 )}
             </div>
@@ -209,10 +217,8 @@ export function SeasonDetail({ seasonId }: { seasonId: string }) {
     const ktv = assignments.find((a) => a.role === 'technician');
     const expert = assignments.find((a) => a.role === 'expert');
     const harvests = harvestsForSeason(seasonId);
-    const hasFinalHarvest = harvests.some((h) => h.harvestType === 'final');
-
-    const water = latestWaterForSeason(seasonId);
-    const health = latestHealthForSeason(seasonId);
+    const waterLogs = waterLogsForSeason(seasonId);
+    const healthLogs = healthLogsForSeason(seasonId);
     const kpi = seasonKpiFor(seasonId);
     const showFcr =
         (s.status === 'active' || s.status === 'completed') && kpi != null && kpi.fcr > 0;
@@ -283,7 +289,7 @@ export function SeasonDetail({ seasonId }: { seasonId: string }) {
             <div className="px-4 space-y-4">
                 {/* Season header */}
                 <div className="rounded-2xl bg-white p-4 shadow-[0_2px_12px_rgba(0,0,0,.06)] space-y-3">
-                    <div className="flex items-start gap-x-18">
+                    <div className="flex items-start gap-x-16">
                         <div>
                             <div className="mt-0.5 text-[13px] text-ocean-600 font-semibold">
                                 {shrimpLabel(s.shrimpType)}
@@ -331,11 +337,26 @@ export function SeasonDetail({ seasonId }: { seasonId: string }) {
                     )}
                 </div>
 
-                {/* Latest water_quality_log */}
-                {water && s.status === 'active' && <WaterCard water={water} />}
-
-                {/* Latest shrimp_health_log */}
-                {health && s.status === 'active' && <HealthCard health={health} />}
+                <div className="grid grid-cols-3 gap-2">
+                    <SeasonHistoryShortcut
+                        label="Đo nước"
+                        icon={Icons.drop}
+                        tone="ocean"
+                        onClick={() => nav.go('owner-water-logs', { seasonId })}
+                    />
+                    <SeasonHistoryShortcut
+                        label="Sức khỏe"
+                        icon={Icons.heart}
+                        tone="rose"
+                        onClick={() => nav.go('owner-health-logs', { seasonId })}
+                    />
+                    <SeasonHistoryShortcut
+                        label="Thu hoạch"
+                        icon={Icons.harvest}
+                        tone="teal"
+                        onClick={() => nav.go('owner-harvest-list', { seasonId })}
+                    />
+                </div>
 
                 {(s.status === 'active' || s.status === 'completed') && (
                     <SeasonCostCard seasonId={seasonId} />
@@ -489,43 +510,6 @@ export function SeasonDetail({ seasonId }: { seasonId: string }) {
                     </div>
                 </div>
 
-                {/* Harvest section */}
-                {(s.status === 'active' || s.status === 'completed') && (
-                    <div>
-                        <div className="mb-2 flex items-center justify-between px-1">
-                            <span className="font-display text-[14px] font-bold text-ink">
-                                Thu hoạch
-                            </span>
-                            {s.status === 'active' && !hasFinalHarvest && (
-                                <button
-                                    onClick={() => nav.go('owner-harvest-record', { seasonId })}
-                                    className="flex items-center gap-1 text-[12px] font-semibold text-ocean-600"
-                                >
-                                    <Icons.plus size={14} />
-                                    Ghi nhận
-                                </button>
-                            )}
-                        </div>
-                        {harvests.length === 0 ? (
-                            <div className="rounded-xl border border-dashed border-line px-4 py-3 text-center text-[12px] text-ink-muted">
-                                Chưa có lần thu hoạch nào.
-                            </div>
-                        ) : (
-                            <div className="space-y-2">
-                                {harvests.map((h) => (
-                                    <HarvestCard
-                                        key={h.id}
-                                        harvest={h}
-                                        onPress={() =>
-                                            nav.go('owner-harvest-detail', { harvestId: h.id })
-                                        }
-                                    />
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                )}
-
                 {/* Action buttons */}
                 <div className="space-y-2.5 pt-1">
                     {s.status === 'planning' && canActivate && (
@@ -596,6 +580,404 @@ export function SeasonDetail({ seasonId }: { seasonId: string }) {
                     />
                 </Field>
             </AppDialog>
+        </div>
+    );
+}
+
+function SeasonHistoryShortcut({
+    label,
+    icon: Icon,
+    tone,
+    onClick,
+}: {
+    label: string;
+    icon: ComponentType<{ size?: number; className?: string }>;
+    tone: 'ocean' | 'rose' | 'teal';
+    onClick: () => void;
+}) {
+    const color = {
+        ocean: 'bg-ocean-50 text-ocean-600',
+        rose: 'bg-rose-50 text-rose-500',
+        teal: 'bg-teal-50 text-teal-500',
+    }[tone];
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className="relative flex min-w-0 flex-col items-center gap-2 rounded-2xl border border-line bg-white/90 px-1.5 py-3.5 text-center transition active:scale-[0.97]"
+        >
+            <span className={`grid size-9 place-items-center rounded-xl ${color}`}>
+                <Icon size={18} />
+            </span>
+            <span className="text-[10px] font-semibold leading-tight text-ink-soft">{label}</span>
+        </button>
+    );
+}
+
+const waterMetricItems = (log: OwnerWaterLog) =>
+    [
+        { label: 'Nhiệt độ', value: log.temperatureC, unit: '°C', metric: 'temperature' as const },
+        { label: 'pH', value: log.ph, unit: '', metric: 'ph' as const },
+        {
+            label: 'DO',
+            value: log.dissolvedOxygenMgL,
+            unit: 'mg/L',
+            metric: 'dissolvedOxygen' as const,
+        },
+        { label: 'Độ mặn', value: log.salinityPpt, unit: '‰', metric: 'salinity' as const },
+        { label: 'NH₃', value: log.nh3MgL, unit: 'mg/L', metric: 'nh3' as const },
+        { label: 'NO₂', value: log.no2MgL, unit: 'mg/L', metric: 'no2' as const },
+        {
+            label: 'Kiềm',
+            value: log.alkalinityMgLCaCO3,
+            unit: 'mg/L',
+            metric: 'alkalinity' as const,
+        },
+        { label: 'H₂S', value: log.h2sMgL, unit: 'mg/L', metric: 'h2s' as const },
+    ].filter((item) => item.value != null);
+
+const waterLogHasAlert = (log: OwnerWaterLog) =>
+    !log.isVoided &&
+    waterMetricItems(log).some((item) => {
+        const state = waterMetricState(item.metric, item.value);
+        return state === 'danger';
+    });
+
+function HistoryStat({
+    label,
+    value,
+    alert = false,
+}: {
+    label: string;
+    value: string;
+    alert?: boolean;
+}) {
+    return (
+        <div className="card min-w-0 px-3 py-2.5 text-center">
+            <div
+                className={`font-display text-[16px] font-extrabold ${alert ? 'text-rose-500' : 'text-ink'}`}
+            >
+                {value}
+            </div>
+            <div className="mt-0.5 truncate text-[9px] font-semibold uppercase tracking-wide text-ink-muted">
+                {label}
+            </div>
+        </div>
+    );
+}
+
+export function OwnerWaterLogList({ seasonId }: { seasonId: string }) {
+    const season = ownerSeasons.find((item) => item.id === seasonId);
+    const [filter, setFilter] = useState<'all' | 'alert' | 'voided'>('all');
+    if (!season || !seasonHasActiveParents(season)) {
+        return <MissingSeason title="Nhật ký đo nước" />;
+    }
+    const logs = waterLogsForSeason(seasonId);
+    const alertCount = logs.filter(waterLogHasAlert).length;
+    const voidedCount = logs.filter((log) => log.isVoided).length;
+    const visible = logs.filter((log) =>
+        filter === 'alert' ? waterLogHasAlert(log) : filter === 'voided' ? log.isVoided : true,
+    );
+
+    return (
+        <div className="pb-8">
+            <ScreenHeader
+                title="Nhật ký đo nước"
+                subtitle={`${season.pondName} · ${season.name}`}
+            />
+            <div className="space-y-3 px-4">
+                <Segmented
+                    fill
+                    value={filter}
+                    onChange={setFilter}
+                    options={[
+                        { value: 'all', label: `Tất cả (${logs.length})` },
+                        { value: 'alert', label: `Cảnh báo (${alertCount})` },
+                        { value: 'voided', label: `Vô hiệu (${voidedCount})` },
+                    ]}
+                />
+                {visible.length === 0 ? (
+                    <EmptyState icon={Icons.drop} title="Không có bản ghi phù hợp" />
+                ) : (
+                    <div className="space-y-2.5">
+                        {visible.map((log) => (
+                            <OwnerWaterLogCard key={log.id} log={log} />
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+function OwnerWaterLogCard({ log }: { log: OwnerWaterLog }) {
+    const alert = waterLogHasAlert(log);
+    return (
+        <div className={`card w-full p-3.5 text-left ${log.isVoided ? 'opacity-70' : ''}`}>
+            <div className="flex items-start justify-between gap-2">
+                <div className="flex min-w-0 items-center gap-2.5">
+                    <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-ocean-50 text-ocean-600">
+                        <Icons.drop size={17} />
+                    </span>
+                    <div className="min-w-0">
+                        <div className="font-mono text-[12px] font-bold text-ink">
+                            {fmtReadingTime(log.recordedAt)}
+                        </div>
+                        <div className="mt-0.5 truncate text-[9px] text-ink-muted">
+                            {log.recordedByName}
+                        </div>
+                    </div>
+                </div>
+                {log.isVoided ? (
+                    <Badge tone="slate" className="shrink-0">
+                        Đã vô hiệu
+                    </Badge>
+                ) : alert ? (
+                    <Badge tone="rose" dot className="shrink-0">
+                        Có cảnh báo
+                    </Badge>
+                ) : (
+                    <Badge tone="teal" dot className="shrink-0">
+                        Trong ngưỡng
+                    </Badge>
+                )}
+            </div>
+            <div className="mt-3">
+                <MetricTileGrid
+                    items={waterMetricItems(log).map((item) => ({
+                        label: item.label,
+                        value: item.value,
+                        unit: item.unit,
+                        state: log.isVoided ? 'default' : waterMetricState(item.metric, item.value),
+                    }))}
+                />
+            </div>
+            {log.note && (
+                <div className="mt-2 rounded-xl bg-slate-50 p-3">
+                    <div className="text-[9px] font-bold uppercase tracking-wide text-ink-muted">
+                        Ghi chú
+                    </div>
+                    <p className="mt-1 text-[10px] leading-relaxed text-ink-soft">{log.note}</p>
+                </div>
+            )}
+            {log.isVoided && (
+                <div className="mt-3 rounded-xl border border-line bg-slate-50 p-3 text-[11px] leading-relaxed text-ink-soft">
+                    <div className="font-bold text-ink">Lý do hủy hiệu lực</div>
+                    <div className="mt-1">{log.voidReason}</div>
+                    <div className="mt-1 text-[9px] text-ink-muted">
+                        {log.voidedByName} · {log.voidedAt ? fmtDateTime(log.voidedAt) : '—'}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+export function OwnerHealthLogList({ seasonId }: { seasonId: string }) {
+    const season = ownerSeasons.find((item) => item.id === seasonId);
+    const [filter, setFilter] = useState<'all' | 'attention' | 'voided'>('all');
+    if (!season || !seasonHasActiveParents(season)) {
+        return <MissingSeason title="Ghi nhận sức khỏe" />;
+    }
+    const logs = healthLogsForSeason(seasonId);
+    const attentionCount = logs.filter(
+        (log) =>
+            !log.isVoided && (log.healthStatus === 'warning' || log.healthStatus === 'critical'),
+    ).length;
+    const voidedCount = logs.filter((log) => log.isVoided).length;
+    const visible = logs.filter((log) =>
+        filter === 'attention'
+            ? !log.isVoided && (log.healthStatus === 'warning' || log.healthStatus === 'critical')
+            : filter === 'voided'
+              ? log.isVoided
+              : true,
+    );
+
+    return (
+        <div className="pb-8">
+            <ScreenHeader
+                title="Ghi nhận sức khỏe"
+                subtitle={`${season.pondName} · ${season.name}`}
+            />
+            <div className="space-y-3 px-4">
+                <Segmented
+                    fill
+                    value={filter}
+                    onChange={setFilter}
+                    options={[
+                        { value: 'all', label: `Tất cả (${logs.length})` },
+                        { value: 'attention', label: `Chú ý (${attentionCount})` },
+                        { value: 'voided', label: `Vô hiệu (${voidedCount})` },
+                    ]}
+                />
+                {visible.length === 0 ? (
+                    <EmptyState icon={Icons.heart} title="Không có bản ghi phù hợp" />
+                ) : (
+                    <div className="space-y-2.5">
+                        {visible.map((log) => (
+                            <OwnerHealthLogCard key={log.id} log={log} />
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+function OwnerHealthLogCard({ log }: { log: OwnerHealthLog }) {
+    const meta = healthMeta[log.healthStatus];
+    return (
+        <div className={`card w-full p-3.5 text-left ${log.isVoided ? 'opacity-70' : ''}`}>
+            <div className="flex items-start justify-between gap-2">
+                <div className="flex min-w-0 items-center gap-2.5">
+                    <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-rose-50 text-rose-500">
+                        <Icons.heart size={17} />
+                    </span>
+                    <div className="min-w-0">
+                        <div className="font-mono text-[12px] font-bold text-ink">
+                            {fmtReadingTime(log.recordedAt)}
+                        </div>
+                        <div className="mt-0.5 truncate text-[9px] text-ink-muted">
+                            {log.recordedByName}
+                        </div>
+                    </div>
+                </div>
+                {log.isVoided ? (
+                    <Badge tone="slate" className="shrink-0">
+                        Đã vô hiệu
+                    </Badge>
+                ) : (
+                    <Badge tone={meta.tone} dot className="shrink-0">
+                        {meta.label}
+                    </Badge>
+                )}
+            </div>
+            <div className="mt-3">
+                <MetricTileGrid
+                    items={[
+                        ...healthMetricItems(log),
+                        {
+                            label: 'Cỡ mẫu',
+                            value: log.sampleSize != null ? num(log.sampleSize) : '—',
+                            unit: 'con',
+                        },
+                        {
+                            label: 'Quần thể',
+                            value:
+                                log.estimatedPopulation != null
+                                    ? num(log.estimatedPopulation)
+                                    : '—',
+                            unit: 'con',
+                        },
+                    ]}
+                />
+            </div>
+            {log.note && (
+                <div className="mt-2 rounded-xl bg-slate-50 p-3">
+                    <div className="text-[9px] font-bold uppercase tracking-wide text-ink-muted">
+                        Ghi chú
+                    </div>
+                    <p className="mt-1 text-[10px] leading-relaxed text-ink-soft">{log.note}</p>
+                </div>
+            )}
+            {log.isVoided && (
+                <div className="mt-3 rounded-xl border border-line bg-slate-50 p-3 text-[11px] leading-relaxed text-ink-soft">
+                    <div className="font-bold text-ink">Lý do hủy hiệu lực</div>
+                    <div className="mt-1">{log.voidReason}</div>
+                    <div className="mt-1 text-[9px] text-ink-muted">
+                        {log.voidedByName} · {log.voidedAt ? fmtDateTime(log.voidedAt) : '—'}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+const healthMetricItems = (log: OwnerHealthLog) => [
+    { label: 'Cỡ TB', value: log.avgWeightG != null ? num(log.avgWeightG) : '—', unit: 'g/con' },
+    { label: 'Dài TB', value: log.avgLengthCm != null ? num(log.avgLengthCm) : '—', unit: 'cm' },
+    {
+        label: 'Sinh khối',
+        value: log.estimatedBiomassKg != null ? num(log.estimatedBiomassKg) : '—',
+        unit: 'kg',
+    },
+    { label: 'Hao hụt', value: num(log.mortalityCount), unit: 'con' },
+];
+
+export function HarvestList({ seasonId }: { seasonId: string }) {
+    const nav = useNav();
+    const season = ownerSeasons.find((item) => item.id === seasonId);
+    if (!season || !seasonHasActiveParents(season)) {
+        return <MissingSeason title="Danh sách thu hoạch" />;
+    }
+    const harvests = harvestsForSeason(seasonId);
+    const hasFinalHarvest = harvests.some((harvest) => harvest.harvestType === 'final');
+    const totalWeight = harvests.reduce((sum, harvest) => sum + harvest.totalWeightKg, 0);
+    const totalRevenue = harvests.reduce((sum, harvest) => sum + (harvest.totalRevenue ?? 0), 0);
+
+    return (
+        <div className="pb-8">
+            <ScreenHeader
+                title="Danh sách thu hoạch"
+                subtitle={`${season.pondName} · ${season.name}`}
+            />
+            <div className="space-y-3 px-4">
+                <div className="grid grid-cols-3 gap-2">
+                    <HistoryStat label="Số lần thu" value={harvests.length.toString()} />
+                    <HistoryStat label="Tổng sản lượng" value={`${num(totalWeight)} kg`} />
+                    <HistoryStat
+                        label="Doanh thu"
+                        value={
+                            totalRevenue > 0
+                                ? `${(totalRevenue / 1_000_000).toLocaleString('vi-VN', { maximumFractionDigits: 1 })} tr`
+                                : '—'
+                        }
+                    />
+                </div>
+                {season.status === 'active' && !hasFinalHarvest && (
+                    <PrimaryButton
+                        full
+                        icon={Icons.plus}
+                        onClick={() => nav.go('owner-harvest-record', { seasonId })}
+                    >
+                        Ghi nhận thu hoạch
+                    </PrimaryButton>
+                )}
+                {harvests.length === 0 ? (
+                    <EmptyState
+                        icon={Icons.harvest}
+                        title="Chưa có lần thu hoạch"
+                        hint={
+                            season.status === 'active'
+                                ? 'Ghi nhận khi vụ bắt đầu thu tỉa hoặc thu hoạch cuối.'
+                                : undefined
+                        }
+                    />
+                ) : (
+                    <div className="space-y-2.5">
+                        {harvests.map((harvest) => (
+                            <HarvestCard
+                                key={harvest.id}
+                                harvest={harvest}
+                                onPress={() =>
+                                    nav.go('owner-harvest-detail', { harvestId: harvest.id })
+                                }
+                            />
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+function MissingSeason({ title }: { title: string }) {
+    return (
+        <div className="pb-8">
+            <ScreenHeader title={title} />
+            <div className="px-4">
+                <EmptyState icon={Icons.layers} title="Không tìm thấy vụ nuôi" />
+            </div>
         </div>
     );
 }
@@ -987,7 +1369,7 @@ function HarvestCard({ harvest: h, onPress }: { harvest: HarvestEvent; onPress: 
                 <div>
                     <div className="text-[10px] text-ink-muted">Giá/kg</div>
                     <div className="text-[13px] font-bold text-ink">
-                        {num(h.pricePerKg || 180.0)} ₫
+                        {h.pricePerKg != null ? `${num(h.pricePerKg)} ₫` : '—'}
                     </div>
                 </div>
                 <div>
@@ -1649,7 +2031,7 @@ export function HarvestRecord({ seasonId }: { seasonId: string }) {
 
     return (
         <div className="flex flex-col">
-            <ScreenHeader title="Ghi nhận thu hoạch" subtitle={`${s.pondName} · ${s.farmName}`} />
+            <ScreenHeader title="Ghi nhận thu hoạch" subtitle={`${s.pondName} · ${s.name}`} />
             <div className="px-4 pt-4 pb-10 space-y-4">
                 <Field label="Loại thu hoạch *">
                     <div className="flex gap-2 mt-1">
@@ -1678,8 +2060,9 @@ export function HarvestRecord({ seasonId }: { seasonId: string }) {
 
                 {harvestType === 'final' && (
                     <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5">
-                        <div className="text-[12px] font-semibold text-amber-700">
-                            ⚠ Thu hoạch cuối sẽ kết thúc vụ nuôi. Không thể hoàn tác.
+                        <div className="flex items-start gap-2 text-[12px] font-semibold text-amber-700">
+                            <Icons.warn size={16} className="mt-px shrink-0" />
+                            <span>Thu hoạch cuối sẽ kết thúc vụ nuôi. Không thể hoàn tác.</span>
                         </div>
                     </div>
                 )}
@@ -1713,16 +2096,6 @@ export function HarvestRecord({ seasonId }: { seasonId: string }) {
                         placeholder="Tùy chọn"
                         value={qty}
                         onChange={(e) => setQty(e.target.value)}
-                    />
-                </Field>
-
-                <Field label="Cỡ tôm (con/kg)" error={errors.avgSize}>
-                    <input
-                        className={`${inputClass} ${errors.avgSize ? 'border-rose-400' : ''}`}
-                        inputMode="decimal"
-                        placeholder="VD: 80"
-                        value={avgSize}
-                        onChange={(e) => setAvgSize(e.target.value)}
                     />
                 </Field>
 
@@ -1772,30 +2145,6 @@ export function HarvestRecord({ seasonId }: { seasonId: string }) {
                         </div>
                     </div>
                 )}
-
-                <Field
-                    label={
-                        harvestType === 'partial'
-                            ? 'Ước tính tôm còn lại (con) *'
-                            : 'Số tôm còn lại sau thu hoạch'
-                    }
-                    error={errors.remainingCount}
-                    hint={harvestType === 'final' ? 'Phải bằng 0 với thu hoạch cuối.' : undefined}
-                >
-                    <input
-                        className={`${inputClass} ${
-                            errors.remainingCount ? 'border-rose-400' : ''
-                        }`}
-                        inputMode="numeric"
-                        placeholder={harvestType === 'partial' ? 'VD: 380000' : '0'}
-                        value={harvestType === 'final' ? '0' : remainingCount}
-                        readOnly={harvestType === 'final'}
-                        onChange={(e) => {
-                            setRemainingCount(e.target.value);
-                            setErrors((p) => ({ ...p, remainingCount: undefined! }));
-                        }}
-                    />
-                </Field>
 
                 <Field label="Tên người mua">
                     <input

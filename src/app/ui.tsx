@@ -8,77 +8,117 @@ import type {
   TaskPriority,
   TaskStatus,
 } from "./data";
+import type { IconType } from "react-icons";
+import {
+  MdAdd,
+  MdArrowBack,
+  MdAutoAwesome,
+  MdBlock,
+  MdCheck,
+  MdChecklist,
+  MdChevronRight,
+  MdClose,
+  MdKeyboardArrowDown,
+  MdNotificationsNone,
+  MdOutlineBusiness,
+  MdOutlineCalendarMonth,
+  MdOutlineChatBubbleOutline,
+  MdOutlineDelete,
+  MdOutlineEdit,
+  MdOutlineFavoriteBorder,
+  MdOutlineFilterList,
+  MdOutlineHome,
+  MdOutlineInfo,
+  MdOutlineInventory2,
+  MdOutlineLayers,
+  MdOutlineLocationOn,
+  MdOutlineLogout,
+  MdOutlineMailOutline,
+  MdOutlineMedication,
+  MdOutlineMemory,
+  MdOutlinePeopleAlt,
+  MdOutlinePerson,
+  MdOutlinePhone,
+  MdOutlinePhotoCamera,
+  MdOutlineSchedule,
+  MdOutlineScience,
+  MdOutlineSetMeal,
+  MdOutlineSettings,
+  MdOutlineShield,
+  MdOutlineStarBorder,
+  MdOutlineVerifiedUser,
+  MdOutlineVisibility,
+  MdOutlineVisibilityOff,
+  MdOutlineWarningAmber,
+  MdOutlineWaterDrop,
+  MdRefresh,
+  MdSearch,
+  MdSend,
+} from "react-icons/md";
 
 /* ------------------------------------------------------------------ icons */
-// Minimal stroke icon set (24x24, currentColor). Kept intentionally spare —
-// no cartoon fish, per brief.
+/**
+ * Material Icons only. Each entry maps directly to Flutter's `Icons.*` catalog,
+ * so the React prototype and Flutter implementation share one visual language.
+ */
+const materialSources = {
+  home: MdOutlineHome,
+  layers: MdOutlineLayers,
+  check: MdCheck,
+  checkList: MdChecklist,
+  bell: MdNotificationsNone,
+  user: MdOutlinePerson,
+  drop: MdOutlineWaterDrop,
+  heart: MdOutlineFavoriteBorder,
+  ops: MdOutlineSettings,
+  chip: MdOutlineMemory,
+  chat: MdOutlineChatBubbleOutline,
+  warn: MdOutlineWarningAmber,
+  chevronR: MdChevronRight,
+  chevronD: MdKeyboardArrowDown,
+  filter: MdOutlineFilterList,
+  back: MdArrowBack,
+  plus: MdAdd,
+  clock: MdOutlineSchedule,
+  pin: MdOutlineLocationOn,
+  camera: MdOutlinePhotoCamera,
+  ban: MdBlock,
+  send: MdSend,
+  star: MdOutlineStarBorder,
+  logout: MdOutlineLogout,
+  shield: MdOutlineShield,
+  info: MdOutlineInfo,
+  sparkle: MdAutoAwesome,
+  flask: MdOutlineScience,
+  pills: MdOutlineMedication,
+  mail: MdOutlineMailOutline,
+  phone: MdOutlinePhone,
+  building: MdOutlineBusiness,
+  edit: MdOutlineEdit,
+  eye: MdOutlineVisibility,
+  eyeOff: MdOutlineVisibilityOff,
+  x: MdClose,
+  trash: MdOutlineDelete,
+  users: MdOutlinePeopleAlt,
+  box: MdOutlineInventory2,
+  calendar: MdOutlineCalendarMonth,
+  refresh: MdRefresh,
+  search: MdSearch,
+  harvest: MdOutlineSetMeal,
+  approve: MdOutlineVerifiedUser,
+};
+
 type IconProps = { className?: string; size?: number };
-const svg = (path: React.ReactNode) =>
-  function Icon({ className, size = 20 }: IconProps) {
-    return (
-      <svg
-        width={size}
-        height={size}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={1.7}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className={className}
-        aria-hidden="true"
-      >
-        {path}
-      </svg>
-    );
+type AppIcon = (props: IconProps) => React.ReactElement;
+
+const materialIcon = (Source: IconType): AppIcon =>
+  function MaterialIcon({ className, size = 20 }: IconProps) {
+    return <Source aria-hidden="true" className={className} size={size} />;
   };
 
-export const Icons = {
-  home: svg(<><path d="M3 10.5 12 3l9 7.5" /><path d="M5 9.5V21h14V9.5" /></>),
-  layers: svg(<><path d="m12 3 9 5-9 5-9-5 9-5Z" /><path d="m3 13 9 5 9-5" /></>),
-  check: svg(<path d="M20 6 9 17l-5-5" />),
-  checkList: svg(<><path d="M9 6h11" /><path d="M9 12h11" /><path d="M9 18h11" /><path d="m3 6 1 1 2-2" /><path d="m3 12 1 1 2-2" /><path d="m3 18 1 1 2-2" /></>),
-  bell: svg(<><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.7 21a2 2 0 0 1-3.4 0" /></>),
-  user: svg(<><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></>),
-  drop: svg(<path d="M12 3s6 5.5 6 10a6 6 0 0 1-12 0c0-4.5 6-10 6-10Z" />),
-  heart: svg(<path d="M12 20s-7-4.7-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.3-7 10-7 10Z" />),
-  ops: svg(<><path d="M12 3v3" /><path d="M12 18v3" /><path d="M3 12h3" /><path d="M18 12h3" /><circle cx="12" cy="12" r="4" /></>),
-  chip: svg(<><rect x="6" y="6" width="12" height="12" rx="2" /><path d="M9 3v3M15 3v3M9 18v3M15 18v3M3 9h3M3 15h3M18 9h3M18 15h3" /></>),
-  chat: svg(<path d="M21 12a8 8 0 0 1-11.5 7.2L3 21l1.8-6.5A8 8 0 1 1 21 12Z" />),
-  warn: svg(<><path d="M12 3 2 20h20L12 3Z" /><path d="M12 10v4" /><path d="M12 17h.01" /></>),
-  chevronR: svg(<path d="m9 6 6 6-6 6" />),
-  chevronD: svg(<path d="m6 9 6 6 6-6" />),
-  filter: svg(<><path d="M4 6h16" /><path d="M7 12h10" /><path d="M10 18h4" /></>),
-  back: svg(<path d="m15 6-6 6 6 6" />),
-  plus: svg(<><path d="M12 5v14" /><path d="M5 12h14" /></>),
-  clock: svg(<><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>),
-  pin: svg(<><path d="M12 21s7-6 7-11a7 7 0 0 0-14 0c0 5 7 11 7 11Z" /><circle cx="12" cy="10" r="2.5" /></>),
-  camera: svg(<><path d="M4 8h3l1.5-2h7L17 8h3v11H4V8Z" /><circle cx="12" cy="13" r="3.2" /></>),
-  ban: svg(<><circle cx="12" cy="12" r="9" /><path d="m5.6 5.6 12.8 12.8" /></>),
-  send: svg(<path d="m4 12 16-8-6 16-3-6-7-2Z" />),
-  star: svg(<path d="M12 4.5l2.3 4.7 5.2.8-3.8 3.6.9 5.1L12 16.9 7.4 18.7l.9-5.1L4.5 10l5.2-.8L12 4.5Z" />),
-  logout: svg(<><path d="M15 4h4v16h-4" /><path d="M10 8l-4 4 4 4" /><path d="M6 12h10" /></>),
-  shield: svg(<path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3Z" />),
-  info: svg(<><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" /></>),
-  sparkle: svg(<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z" />),
-  flask: svg(<><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3" /><path d="M7.5 15h9" /></>),
-  pills: svg(<><rect x="3" y="9" width="9" height="6" rx="3" transform="rotate(45 7.5 12)" /><circle cx="16" cy="16" r="4.5" /></>),
-  mail: svg(<><rect x="2" y="4" width="20" height="16" rx="2" /><path d="m2 7 10 7 10-7" /></>),
-  phone: svg(<path d="M6.6 10.8a15.3 15.3 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.24 11.4 11.4 0 0 0 3.57.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1 11.4 11.4 0 0 0 .57 3.57 1 1 0 0 1-.25 1.02L6.6 10.8Z" />),
-  building: svg(<><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M8 7h1M8 11h1M8 15h1M15 7h1M15 11h1M15 15h1M11 15v3" /><path d="M11 3v4" /></>),
-  edit: svg(<><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z" /></>),
-  eye: svg(<><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></>),
-  eyeOff: svg(<><path d="M17.9 17.9A10 10 0 0 1 12 19c-7 0-10-7-10-7a18 18 0 0 1 5.1-6.9M9.9 4.2A9.8 9.8 0 0 1 12 4c7 0 10 7 10 7a18 18 0 0 1-1.3 2.1" /><path d="m2 2 20 20" /></>),
-  x: svg(<path d="m18 6-12 12M6 6l12 12" />),
-  trash: svg(<><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 15H6L5 6" /><path d="M10 11v5M14 11v5" /></>),
-  users: svg(<><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></>),
-  box: svg(<><path d="m12 3 9 5v8l-9 5-9-5V8l9-5Z" /><path d="m3 8 9 5" /><path d="m21 8-9 5" /><path d="M12 13v8" /></>),
-  calendar: svg(<><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></>),
-  refresh: svg(<><path d="M3 12a9 9 0 0 1 15-6.7L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-15 6.7L3 16" /><path d="M3 21v-5h5" /></>),
-  search: svg(<><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></>),
-  harvest: svg(<><path d="M12 2v20" /><path d="m5 5 7 7 7-7" /><path d="M2 19h20" /></>),
-  approve: svg(<><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3Z" /><path d="m9 12 2 2 4-4" /></>),
-};
+export const Icons = Object.fromEntries(
+  Object.entries(materialSources).map(([name, Source]) => [name, materialIcon(Source)]),
+) as { [K in keyof typeof materialSources]: AppIcon };
 
 /* ------------------------------------------------------------------ format */
 export const fmtTime = (iso: string) =>
@@ -307,19 +347,23 @@ export function Segmented<T extends string>({
   value,
   onChange,
   options,
+  fill = false,
 }: {
   value: T;
   onChange: (v: T) => void;
   options: { value: T; label: string }[];
+  /** Give every item the same width and use the full available row. */
+  fill?: boolean;
 }) {
-  const distribute = options.length <= 2;
+  const distribute = fill || options.length <= 2;
+  const compact = fill && options.length > 2;
   return (
     <div className="scroll-clean flex gap-1 overflow-x-auto rounded-2xl bg-ocean-100/70 p-1">
       {options.map((o) => (
         <button
           key={o.value}
           onClick={() => onChange(o.value)}
-          className={`${distribute ? "min-w-0 flex-1" : "shrink-0"} min-h-11 rounded-xl px-3.5 py-2 text-[13px] font-semibold transition active:scale-[0.98] ${
+          className={`${distribute ? "min-w-0 flex-1" : "shrink-0"} ${compact ? "px-1.5 text-[11px]" : "px-3.5 text-[13px]"} min-h-11 rounded-xl py-2 font-semibold transition active:scale-[0.98] ${
             value === o.value
               ? "bg-ocean-500 text-white shadow-sm"
               : "bg-white/55 text-ink-soft hover:bg-white"
@@ -436,8 +480,13 @@ export function Sheet({
       <div className="relative max-h-[92%] overflow-hidden rounded-t-[26px] bg-white shadow-[0_-12px_40px_-16px_rgba(15,28,46,.45)]">
         <div className="flex items-center justify-between border-b border-line-soft px-5 pb-3 pt-4">
           <h3 className="font-display text-[16px] font-bold text-ink">{title}</h3>
-          <button onClick={onClose} className="grid size-8 place-items-center rounded-full bg-slate-50 text-ink-muted">
-            <span className="text-lg leading-none">×</span>
+          <button
+            type="button"
+            aria-label="Đóng"
+            onClick={onClose}
+            className="grid size-8 place-items-center rounded-full bg-slate-50 text-ink-muted"
+          >
+            <Icons.x size={18} />
           </button>
         </div>
         <div className="scroll-clean max-h-[64vh] overflow-y-auto px-5 py-4">{children}</div>
